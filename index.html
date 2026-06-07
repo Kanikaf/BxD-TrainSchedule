@@ -128,6 +128,7 @@ label:first-child{margin-top:0}
     <div class="btn-row">
 <button class="btn btn-secondary btn-sm" onclick="setNextMonday()">来週</button>
       <button class="btn btn-primary btn-sm" onclick="autoFill()">🔄 自動入力</button>
+      <button class="btn btn-secondary btn-sm" onclick="clearDayRows()">🗑 クリア</button>
     </div>
   </div>
   <div id="rot-status"></div>
@@ -219,7 +220,7 @@ const SKEY = 'bxd_rot_v3';
 const RANK_ORDER = {R5:0, R4:1, R3:2, R2:3, R1:4};
 
 // ── GAS Backend URL ── (GASデプロイ後にここを更新)
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwSQ2fBworif_QFa09WZ7JXsy3Ot_dCR5y7HBcr-x60tqXjrPSk24nIMbrIBrR-uKvV/exec';
+const GAS_URL = 'YOUR_GAS_URL_HERE';
 
 const DEFAULT_MEMBERS = [
   {name:"イツキ ヨウ",rank:"R5"},
@@ -538,6 +539,16 @@ function autoFill() {
   }
   updateRotStatus();
   toast('自動入力完了 ✓ 間が空いている順に並べました');
+}
+
+function clearDayRows() {
+  for (let i = 0; i < 7; i++) {
+    const c = document.getElementById('c_'+i);
+    const v = document.getElementById('v_'+i);
+    if (c) { c.value = ''; c.classList.remove('af'); }
+    if (v) { v.value = ''; v.classList.remove('af'); }
+  }
+  toast('クリアしました');
 }
 
 function updateRotStatus() {
