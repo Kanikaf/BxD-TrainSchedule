@@ -332,7 +332,7 @@ function openD(id, drop, q, di, role) {
   if (!S.members.length) { drop.innerHTML = '<div class="di" style="color:var(--text3)">連盟員未登録</div>'; drop.classList.add('open'); return; }
   const ql = q.trim().toLowerCase();
   const fil = S.members.filter(m => !ql || m.name.toLowerCase().includes(ql) || m.rank.toLowerCase().includes(ql));
-  drop.innerHTML = fil.slice(0,20).map(m =>
+  drop.innerHTML = fil.map(m =>
     `<div class="di" onmousedown="selN('${id}',${di},'${role}','${m.name.replace(/'/g,"\\'")}',event)">
       <span class="rank rank-${m.rank}">${m.rank}</span><span>${m.name}</span>
     </div>`
