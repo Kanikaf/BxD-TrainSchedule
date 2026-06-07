@@ -109,7 +109,7 @@ label:first-child{margin-top:0}
 
 <div class="topbar">
   <h1>🚂 BxD ローテーション管理</h1>
-  <p>Zone 720 — Last War</p>
+  <p>Zone 720 — Last War <span id="sync-status" style="margin-left:8px;font-size:10px;opacity:0;transition:opacity .3s"></span></p>
 </div>
 <div class="tabbar">
   <button onclick="showPage('schedule')" id="tab-schedule" class="active">スケジュール</button>
@@ -218,6 +218,9 @@ const DCLS = ['d0','d1','d2','d3','d4','d5','d6'];
 const SKEY = 'bxd_rot_v3';
 const RANK_ORDER = {R5:0, R4:1, R3:2, R2:3, R1:4};
 
+// ── GAS Backend URL ── (GASデプロイ後にここを更新)
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyA-7iOARg_w9ZLqa9oFHpjpBNGRODyVvAtX1LX_lOJmNixM_3hwmFZi1yeltI-Al_Cig/exec';
+
 const DEFAULT_MEMBERS = [
   {name:"イツキ ヨウ",rank:"R5"},
   {name:"chokurin",rank:"R4"},{name:"Chokurin",rank:"R4"},{name:"あちょりん",rank:"R4"},
@@ -254,6 +257,58 @@ let S = loadS();
 let adminRankFilter = 'all';
 let editingName = null;
 
+
+// ── GAS sync ──────────────────────────────────────────────────
+async function syncFromGAS() {
+  if (!GAS_URL || GAS_URL === 'YOUR_GAS_URL_HERE') return;
+  try {
+    showSyncStatus('⏳ 同期中...');
+    const res = await fetch(GAS_URL + '?action=load');
+    const data = await res.json();
+    if (data.error) { showSyncStatus('⚠️ 同期エラー'); return; }
+    if (data.members)          S.members          = data.members;
+    if (data.schedules)        S.schedules        = data.schedules;
+    if (data.conductorHistory) S.conductorHistory = data.conductorHistory;
+    if (data.excluded)         S.excluded         = data.excluded;
+    localStorage.setItem(SKEY, JSON.stringify(S));
+    showSyncStatus('✓ 同期済み');
+    renderAdminList();
+    renderHistory();
+    renderPreview();
+    updateRotStatus();
+    buildDayRows();
+    loadExistingSchedule();
+  } catch(e) {
+    showSyncStatus('⚠️ 同期失敗（オフライン？）');
+  }
+}
+
+async function saveToGAS() {
+  if (!GAS_URL || GAS_URL === 'YOUR_GAS_URL_HERE') return;
+  try {
+    await fetch(GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'save',
+        payload: {
+          members: S.members,
+          schedules: S.schedules,
+          conductorHistory: S.conductorHistory,
+          excluded: S.excluded
+        }
+      })
+    });
+  } catch(e) {
+    console.warn('GAS save failed:', e);
+  }
+}
+
+function showSyncStatus(msg) {
+  const el = document.getElementById('sync-status');
+  if (el) { el.textContent = msg; el.style.opacity = '1'; }
+  setTimeout(() => { if (el) el.style.opacity = '0'; }, 3000);
+}
+
 function loadS() {
   try {
     const r = localStorage.getItem(SKEY);
@@ -270,7 +325,7 @@ function loadS() {
   });
   return { members: def, rotPos: 0, schedules: {}, previewIdx: 0, conductorHistory: {}, excluded: {} };
 }
-function save() { try { localStorage.setItem(SKEY, JSON.stringify(S)); } catch(e) {} }
+function save() { try { localStorage.setItem(SKEY, JSON.stringify(S)); } catch(e) {} saveToGAS(); }
 
 // ── utils ──
 function monOf(s) { const d = new Date(s+'T00:00:00'); const dw = d.getDay(); d.setDate(d.getDate()+(dw===0?1:1-dw)); return d; }
@@ -830,6 +885,11 @@ document.addEventListener('DOMContentLoaded', function() {
   renderHistory();
   renderPreview();
   updateRotStatus();
+  // Sync from GAS on load
+  syncFromGAS();
+
+  syncFromGAS();
+
   document.getElementById('sched-week-start').addEventListener('change', () => {
     buildDayRows();
     updateRotStatus();
