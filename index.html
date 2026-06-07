@@ -582,13 +582,18 @@ function addOne() {
 
 function zenToHan(s) { return s.replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0)-0xFEE0)); }
 
+// unmatched items pending manual link: [{dateStr, memoName}]
+let unmatchedItems = [];
+
 function importMemo() {
   const raw = document.getElementById('memo-input').value.trim();
   if (!raw) return toast('メモを貼り付けてください');
   const lines = raw.split(/[\n\r]+/);
   let currentMonth = null;
   const now = new Date(); const currentYear = now.getFullYear();
-  const imported = []; const notFound = [];
+  const imported = [];
+  unmatchedItems = [];
+
   lines.forEach(line => {
     line = line.trim(); if (!line) return;
     const lh = zenToHan(line);
@@ -601,23 +606,59 @@ function importMemo() {
       const d = new Date(year, currentMonth-1, day);
       if (d > now) year = currentYear - 1;
       const dateStr = `${year}-${String(currentMonth).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-      const member = S.members.find(m => m.name===name) || S.members.find(m => m.name.includes(name)||name.includes(m.name));
+      const member = S.members.find(m => m.name===name)
+        || S.members.find(m => m.name.includes(name)||name.includes(m.name));
       if (member) {
         if (!S.conductorHistory) S.conductorHistory = {};
         if (!S.conductorHistory[member.name] || dateStr > S.conductorHistory[member.name])
           S.conductorHistory[member.name] = dateStr;
         imported.push(`${currentMonth}/${day} ${member.name}`);
       } else {
-        notFound.push(`${currentMonth}/${day} ${name}`);
+        unmatchedItems.push({ dateStr, memoName: name, label: `${currentMonth}/${day} ${name}` });
       }
     }
   });
+
   save();
-  let html = '';
-  if (imported.length) html += `<div style="color:var(--green-dark)">✓ ${imported.length}件をインポートしました</div>`;
-  if (notFound.length) html += `<div style="color:var(--amber);margin-top:4px">⚠ 名前が一致しなかった行：<br>${notFound.join('、')}</div>`;
-  document.getElementById('memo-result').innerHTML = html;
+  renderMemoResult(imported);
   if (imported.length) { toast(`${imported.length}件インポート完了`); renderAdminList(); }
+}
+
+function renderMemoResult(imported) {
+  const res = document.getElementById('memo-result');
+  let html = '';
+  if (imported && imported.length)
+    html += `<div style="color:var(--green-dark);margin-bottom:8px">✓ ${imported.length}件をインポートしました</div>`;
+  if (unmatchedItems.length) {
+    const opts = S.members.map(m => `<option value="${m.name}">${m.name}（${m.rank}）</option>`).join('');
+    html += `<div style="color:var(--amber);font-size:12px;font-weight:600;margin-bottom:6px">⚠ 一致しなかった ${unmatchedItems.length}件 — 正式名を選んで紐付けしてください</div>`;
+    html += unmatchedItems.map((item, idx) => `
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap">
+        <span style="font-size:12px;color:var(--text2);min-width:80px">${item.label}</span>
+        <span style="font-size:11px;color:var(--text3)">→</span>
+        <select id="unmatched-sel-${idx}" style="flex:1;min-width:120px;font-size:12px;padding:5px 8px">
+          <option value="">（スキップ）</option>
+          ${opts}
+        </select>
+        <button class="btn btn-primary btn-sm" onclick="linkUnmatched(${idx})">確定</button>
+      </div>`).join('');
+  }
+  res.innerHTML = html;
+}
+
+function linkUnmatched(idx) {
+  const sel = document.getElementById(`unmatched-sel-${idx}`);
+  if (!sel || !sel.value) { unmatchedItems.splice(idx,1); renderMemoResult(null); return; }
+  const memberName = sel.value;
+  const item = unmatchedItems[idx];
+  if (!S.conductorHistory) S.conductorHistory = {};
+  if (!S.conductorHistory[memberName] || item.dateStr > S.conductorHistory[memberName])
+    S.conductorHistory[memberName] = item.dateStr;
+  save();
+  unmatchedItems.splice(idx, 1);
+  renderMemoResult(null);
+  renderAdminList();
+  toast(`${item.label} → ${memberName} に紐付けました`);
 }
 
 // ── init ──
