@@ -315,6 +315,17 @@ function buildDayRows() {
     row.appendChild(makeNW('v_'+i, i, 'vip'));
     container.appendChild(row);
   }
+  // Pre-fill Monday VIP from previous week's Sunday conductor
+  const prevSunday = new Date(mon); prevSunday.setDate(mon.getDate() - 1);
+  const prevWeekKey = iso(monOf(iso(prevSunday)));
+  const prevSchedule = S.schedules[prevWeekKey];
+  if (prevSchedule) {
+    const sundayEntry = prevSchedule[6]; // index 6 = Sunday
+    if (sundayEntry && sundayEntry.conductor) {
+      const mondayVip = document.getElementById('v_0');
+      if (mondayVip && !mondayVip.value) mondayVip.value = sundayEntry.conductor;
+    }
+  }
 }
 
 function makeNW(id, di, role) {
@@ -374,10 +385,24 @@ function autoFill() {
     const db = lastDate[b.name] ? Math.floor((now - new Date(lastDate[b.name]+'T00:00:00'))/86400000) : Infinity;
     return db - da;
   });
+  // Get prev week's Sunday conductor for Monday VIP
+  const ws2 = document.getElementById('sched-week-start').value;
+  let prevSunConductor = '';
+  if (ws2) {
+    const mon2 = monOf(ws2);
+    const prevSun = new Date(mon2); prevSun.setDate(mon2.getDate()-1);
+    const prevKey = iso(monOf(iso(prevSun)));
+    const prevSched = S.schedules[prevKey];
+    if (prevSched && prevSched[6]?.conductor) prevSunConductor = prevSched[6].conductor;
+  }
+
   for (let i = 0; i < 7; i++) {
     const c = document.getElementById('c_'+i); const v = document.getElementById('v_'+i);
     if (c) { c.value = sorted[i]?.name||''; c.classList.add('af'); }
-    if (v) { const vn = i===0 ? '' : (sorted[i-1]?.name||''); v.value = vn; v.classList.toggle('af', !!vn); }
+    if (v) {
+      const vn = i===0 ? prevSunConductor : (sorted[i-1]?.name||'');
+      v.value = vn; v.classList.toggle('af', !!vn);
+    }
   }
   updateRotStatus();
   toast('自動入力完了 ✓ 間が空いている順に並べました');
