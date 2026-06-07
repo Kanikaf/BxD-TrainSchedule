@@ -219,7 +219,7 @@ const SKEY = 'bxd_rot_v3';
 const RANK_ORDER = {R5:0, R4:1, R3:2, R2:3, R1:4};
 
 // ── GAS Backend URL ── (GASデプロイ後にここを更新)
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyA-7iOARg_w9ZLqa9oFHpjpBNGRODyVvAtX1LX_lOJmNixM_3hwmFZi1yeltI-Al_Cig/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwSQ2fBworif_QFa09WZ7JXsy3Ot_dCR5y7HBcr-x60tqXjrPSk24nIMbrIBrR-uKvV/exec';
 
 const DEFAULT_MEMBERS = [
   {name:"イツキ ヨウ",rank:"R5"},
@@ -263,7 +263,10 @@ async function syncFromGAS() {
   if (!GAS_URL || GAS_URL === 'YOUR_GAS_URL_HERE') return;
   try {
     showSyncStatus('⏳ 同期中...');
-    const res = await fetch(GAS_URL + '?action=load');
+    const res = await fetch(GAS_URL + '?action=load', {
+      redirect: 'follow',
+      muteHttpExceptions: true
+    });
     const data = await res.json();
     if (data.error) { showSyncStatus('⚠️ 同期エラー'); return; }
     if (data.members)          S.members          = data.members;
@@ -288,6 +291,8 @@ async function saveToGAS() {
   try {
     await fetch(GAS_URL, {
       method: 'POST',
+      redirect: 'follow',
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({
         action: 'save',
         payload: {
