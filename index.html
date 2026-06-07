@@ -185,6 +185,16 @@ label:first-child{margin-top:0}
     <div style="background:var(--gray1);border-radius:var(--radius-sm);padding:8px 10px;font-size:12px;color:var(--text2);margin-bottom:8px;border:1px solid var(--gray2)">
       例：６月度車掌<br>１日　1000まん<br>２日　ながらブン
     </div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+      <label style="margin:0;white-space:nowrap">月が不明な場合：</label>
+      <select id="memo-fallback-month" style="width:100px;padding:6px 8px;font-size:13px">
+        <option value="">自動判定</option>
+        <option value="1">1月</option><option value="2">2月</option><option value="3">3月</option>
+        <option value="4">4月</option><option value="5">5月</option><option value="6">6月</option>
+        <option value="7">7月</option><option value="8">8月</option><option value="9">9月</option>
+        <option value="10">10月</option><option value="11">11月</option><option value="12">12月</option>
+      </select>
+    </div>
     <textarea id="memo-input" rows="7" placeholder="ここにメモを貼り付け"></textarea>
     <div class="btn-row">
       <button class="btn btn-primary" onclick="importMemo()">📥 インポート</button>
@@ -596,7 +606,8 @@ function importMemo() {
   const raw = document.getElementById('memo-input').value.trim();
   if (!raw) return toast('メモを貼り付けてください');
   const lines = raw.split(/[\n\r]+/);
-  let currentMonth = null;
+  const fallbackMonth = parseInt(document.getElementById('memo-fallback-month')?.value||'0')||null;
+  let currentMonth = fallbackMonth;
   const now = new Date(); const currentYear = now.getFullYear();
   const imported = [];
   unmatchedItems = [];
@@ -638,34 +649,40 @@ function renderMemoResult(imported) {
     html += `<div style="color:var(--green-dark);margin-bottom:8px">✓ ${imported.length}件をインポートしました</div>`;
   if (unmatchedItems.length) {
     const opts = S.members.map(m => `<option value="${m.name}">${m.name}（${m.rank}）</option>`).join('');
-    html += `<div style="color:var(--amber);font-size:12px;font-weight:600;margin-bottom:6px">⚠ 一致しなかった ${unmatchedItems.length}件 — 正式名を選んで紐付けしてください</div>`;
-    html += unmatchedItems.map((item, idx) => `
+    html += `<div style="color:var(--amber);font-size:12px;font-weight:600;margin-bottom:6px">⚠ 一致しなかった ${unmatchedItems.length}件 — 正式名を選んでください</div>`;
+    html += `<div id="unmatched-list">` + unmatchedItems.map((item, idx) => `
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap">
-        <span style="font-size:12px;color:var(--text2);min-width:80px">${item.label}</span>
+        <span style="font-size:12px;color:var(--text2);min-width:90px">${item.label}</span>
         <span style="font-size:11px;color:var(--text3)">→</span>
-        <select id="unmatched-sel-${idx}" style="flex:1;min-width:120px;font-size:12px;padding:5px 8px">
+        <select id="unmatched-sel-${idx}" style="flex:1;min-width:130px;font-size:12px;padding:5px 8px">
           <option value="">（スキップ）</option>
           ${opts}
         </select>
-        <button class="btn btn-primary btn-sm" onclick="linkUnmatched(${idx})">確定</button>
-      </div>`).join('');
+      </div>`).join('') + `</div>`;
+    html += `<button class="btn btn-primary" style="margin-top:8px;width:100%" onclick="linkAllUnmatched()">✓ すべて確定</button>`;
   }
   res.innerHTML = html;
 }
 
-function linkUnmatched(idx) {
-  const sel = document.getElementById(`unmatched-sel-${idx}`);
-  if (!sel || !sel.value) { unmatchedItems.splice(idx,1); renderMemoResult(null); return; }
-  const memberName = sel.value;
-  const item = unmatchedItems[idx];
-  if (!S.conductorHistory) S.conductorHistory = {};
-  if (!S.conductorHistory[memberName] || item.dateStr > S.conductorHistory[memberName])
-    S.conductorHistory[memberName] = item.dateStr;
+function linkAllUnmatched() {
+  // collect all current selections
+  const toProcess = unmatchedItems.map((item, idx) => {
+    const sel = document.getElementById(`unmatched-sel-${idx}`);
+    return { item, memberName: sel ? sel.value : '' };
+  });
+  let count = 0;
+  toProcess.forEach(({ item, memberName }) => {
+    if (!memberName) return;
+    if (!S.conductorHistory) S.conductorHistory = {};
+    if (!S.conductorHistory[memberName] || item.dateStr > S.conductorHistory[memberName])
+      S.conductorHistory[memberName] = item.dateStr;
+    count++;
+  });
   save();
-  unmatchedItems.splice(idx, 1);
+  unmatchedItems = unmatchedItems.filter((_, idx) => !toProcess[idx].memberName);
   renderMemoResult(null);
   renderAdminList();
-  toast(`${item.label} → ${memberName} に紐付けました`);
+  if (count) toast(`${count}件を一括で紐付けました`);
 }
 
 // ── init ──
