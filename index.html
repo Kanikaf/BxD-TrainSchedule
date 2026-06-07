@@ -604,6 +604,7 @@ function zenToHan(s) { return s.replace(/[０-９]/g, c => String.fromCharCode(c
 
 // unmatched items pending manual link: [{dateStr, memoName}]
 let unmatchedItems = [];
+let pendingFuture = [];
 
 function importMemo() {
   const raw = document.getElementById('memo-input').value.trim();
@@ -624,14 +625,14 @@ function importMemo() {
     if (md && currentMonth !== null) {
       const day = parseInt(md[1]); const name = md[2].trim();
       let year = currentYear;
-      const d = new Date(year, currentMonth-1, day);
-      if (d > now) year = currentYear - 1;
-      const dateStr = `${year}-${String(currentMonth).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-      // Reject future dates
-      if (new Date(dateStr + 'T00:00:00') > now) {
+      const dateStrCheck = `${year}-${String(currentMonth).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      // Reject future dates first (before any year adjustment)
+      if (new Date(dateStrCheck + 'T00:00:00') > now) {
         future.push(`${currentMonth}/${day} ${name}`);
         continue;
       }
+      // If past, use current year as-is (already confirmed not future)
+      const dateStr = dateStrCheck;
       const member = S.members.find(m => m.name===name)
         || S.members.find(m => m.name.includes(name)||name.includes(m.name));
       if (member) {
@@ -645,12 +646,14 @@ function importMemo() {
     }
   }
 
+  pendingFuture = future;
   save();
-  renderMemoResult(imported, future);
+  renderMemoResult(imported);
   if (imported.length) { toast(`${imported.length}件インポート完了`); renderAdminList(); }
 }
 
-function renderMemoResult(imported, future) {
+function renderMemoResult(imported) {
+  const future = pendingFuture;
   const res = document.getElementById('memo-result');
   let html = '';
   if (imported && imported.length)
