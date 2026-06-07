@@ -277,13 +277,7 @@ function fmtWeek(key){
   return `${d.getMonth()+1}/${d.getDate()}`;
 }
 
-// ── init ──
-setThisMonday();
-buildDayRows();
-renderAdminList();
-renderHistory();
-renderPreview();
-updateRotStatus();
+// ── init runs at end of script ──
 
 // ── page nav ──
 function showPage(n){
@@ -679,11 +673,6 @@ function addOne(){
 }
 
 
-document.getElementById('sched-week-start').addEventListener('change',()=>{
-  buildDayRows();
-  updateRotStatus();
-  loadExistingSchedule();
-});
 
 function loadExistingSchedule(){
   const ws=document.getElementById('sched-week-start').value;
@@ -698,6 +687,19 @@ function loadExistingSchedule(){
     if(v&&d.vip){v.value=d.vip;v.classList.remove('af');}
   });
 }
+// init
+setThisMonday();
+buildDayRows();
+renderAdminList();
+renderHistory();
+renderPreview();
+updateRotStatus();
+
+document.getElementById('sched-week-start').addEventListener('change',()=>{
+  buildDayRows();
+  updateRotStatus();
+  loadExistingSchedule();
+});
 </script>
 </body>
 </html>
