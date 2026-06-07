@@ -609,10 +609,10 @@ function importMemo() {
   const fallbackMonth = parseInt(document.getElementById('memo-fallback-month')?.value||'0')||null;
   let currentMonth = fallbackMonth;
   const now = new Date(); const currentYear = now.getFullYear();
-  const imported = [];
+  const imported = []; const notFound = []; const future = [];
   unmatchedItems = [];
 
-  lines.forEach(line => {
+  for (let line of lines) {
     line = line.trim(); if (!line) return;
     const lh = zenToHan(line);
     const mh = lh.match(/^(\d+)月/);
@@ -624,6 +624,11 @@ function importMemo() {
       const d = new Date(year, currentMonth-1, day);
       if (d > now) year = currentYear - 1;
       const dateStr = `${year}-${String(currentMonth).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      // Reject future dates
+      if (new Date(dateStr + 'T00:00:00') > now) {
+        future.push(`${currentMonth}/${day} ${name}`);
+        continue;
+      }
       const member = S.members.find(m => m.name===name)
         || S.members.find(m => m.name.includes(name)||name.includes(m.name));
       if (member) {
@@ -635,18 +640,24 @@ function importMemo() {
         unmatchedItems.push({ dateStr, memoName: name, label: `${currentMonth}/${day} ${name}` });
       }
     }
-  });
+  }
 
   save();
-  renderMemoResult(imported);
+  renderMemoResult(imported, future);
   if (imported.length) { toast(`${imported.length}件インポート完了`); renderAdminList(); }
 }
 
-function renderMemoResult(imported) {
+function renderMemoResult(imported, future) {
   const res = document.getElementById('memo-result');
   let html = '';
   if (imported && imported.length)
     html += `<div style="color:var(--green-dark);margin-bottom:8px">✓ ${imported.length}件をインポートしました</div>`;
+  if (future && future.length)
+    html += `<div style="background:var(--red-light);border:1px solid #f5c6c6;border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:8px;font-size:12px">
+      <div style="font-weight:600;color:var(--red);margin-bottom:4px">⚠️ 未来の日付のため取り込みできませんでした（${future.length}件）</div>
+      <div style="color:var(--red);margin-bottom:6px">${future.join('、')}</div>
+      <div style="color:var(--text2)">📅 予定はスケジュールタブから入力してください。このタブは過去の実績のみ受け付けます。</div>
+    </div>`;
   if (unmatchedItems.length) {
     const opts = S.members.map(m => `<option value="${m.name}">${m.name}（${m.rank}）</option>`).join('');
     html += `<div style="color:var(--amber);font-size:12px;font-weight:600;margin-bottom:6px">⚠ 一致しなかった ${unmatchedItems.length}件 — 正式名を選んでください</div>`;
