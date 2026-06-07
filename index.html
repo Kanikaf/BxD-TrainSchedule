@@ -297,16 +297,50 @@ function showPage(n) {
 
 // ── schedule ──
 function setThisMonday() {
-  document.getElementById('sched-week-start').value = iso(monOf(todayISO()));
-  buildDayRows();
+  autoSaveCurrentWeek(() => {
+    document.getElementById('sched-week-start').value = iso(monOf(todayISO()));
+    buildDayRows();
+    loadExistingSchedule();
+    updateRotStatus();
+  });
 }
 function setNextMonday() {
-  const thisMonday = monOf(todayISO());
-  // Always go forward from this week's Monday, not from today
-  const next = new Date(thisMonday);
-  next.setDate(thisMonday.getDate() + 7);
-  document.getElementById('sched-week-start').value = iso(next);
-  buildDayRows();
+  autoSaveCurrentWeek(() => {
+    const thisMonday = monOf(todayISO());
+    const next = new Date(thisMonday);
+    next.setDate(thisMonday.getDate() + 7);
+    document.getElementById('sched-week-start').value = iso(next);
+    buildDayRows();
+    loadExistingSchedule();
+    updateRotStatus();
+  });
+}
+
+function autoSaveCurrentWeek(callback) {
+  const ws = document.getElementById('sched-week-start').value;
+  if (!ws) { callback(); return; }
+  const mon = monOf(ws); const key = iso(mon);
+  // Check if any input has content
+  let hasContent = false;
+  for (let i = 0; i < 7; i++) {
+    const c = document.getElementById('c_'+i)?.value.trim();
+    const v = document.getElementById('v_'+i)?.value.trim();
+    if (c || v) { hasContent = true; break; }
+  }
+  if (!hasContent) { callback(); return; }
+  // Auto-save silently
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const c = document.getElementById('c_'+i)?.value.trim()||'';
+    const v = document.getElementById('v_'+i)?.value.trim()||'';
+    const d = new Date(mon); d.setDate(mon.getDate()+i);
+    days.push({ day: DAYS[i], date: fd(d), conductor: c, vip: v });
+  }
+  S.schedules[key] = days;
+  S.previewIdx = Object.keys(S.schedules).sort().indexOf(key);
+  save();
+  toast('入力内容を自動保存しました ✓');
+  callback();
 }
 
 function buildDayRows() {
@@ -797,7 +831,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <button class="help-btn" onclick="toggleHelp(event)">？</button>
 <script>
 // ── help ──
-const HELP_CONTENT = {"schedule": "<h3>📅 スケジュールタブの使い方</h3>\n<ol>\n<li>週の開始日を選ぶ（「今週」「来週」ボタンで簡単設定）</li>\n<li>「🔄 自動入力」で前回任命からの経過日数が長い順に7名が自動でセット</li>\n<li>変更したい日は名前欄をタップ→検索して上書き</li>\n<li>車掌を選ぶと翌日のVIPに自動コピー（週またぎも対応）</li>\n<li>「保存して案内表示へ」で完了</li>\n</ol>\n<div class=\"warn\">⚠️ 予定を入力する場所はここ。メモインポートは過去の実績のみ受け付けます。</div>", "preview": "<h3>📸 案内表示タブの使い方</h3>\n<ol>\n<li>この画面をスクリーンショットして連盟チャットへ共有</li>\n<li>‹ › ボタンで過去・未来の週を切り替え</li>\n</ol>\n<div class=\"warn\">⚠️ この画面にはボタン類を表示していません。スクショ用です。</div>", "history": "<h3>📋 履歴タブの使い方</h3>\n<ol>\n<li>保存済みの週間スケジュールを一覧で確認</li>\n<li>「詳細」で内容を展開、「削除」で削除</li>\n</ol>\n<div class=\"warn\">⚠️ ここは閲覧・削除のみ。過去データの入力は管理者タブのメモインポートから。</div>", "admin": "<h3>⚙️ 管理者タブの使い方</h3>\n<ol>\n<li>連盟員の前回任命日を✏️ボタンで編集できる</li>\n<li>経過日数が赤=30日超、オレンジ=14日超、緑=14日以内</li>\n<li>「1名手動追加」で連盟員を追加</li>\n<li>「車掌メモから一括インポート」で過去の実績を取り込む（未来日付は自動で弾く）</li>\n</ol>\n<div class=\"warn\">⚠️ メモインポートは過去実績のみ。予定はスケジュールタブへ。</div>"};
+const HELP_CONTENT = {"schedule": "<h3>📅 スケジュールタブの使い方</h3>\n<ol>\n<li>週の開始日を選ぶ（「今週」「来週」ボタンで簡単設定）</li>\n<li>「🔄 自動入力」で前回任命からの経過日数が長い順に7名が自動でセット</li>\n<li>変更したい日は名前欄をタップ→検索して上書き</li>\n<li>車掌を選ぶと翌日のVIPに自動コピー（週またぎも対応）</li>\n<li>「保存して案内表示へ」で完了</li>\n</ol>\n<div class=\"warn\">⚠️ 予定を入力する場所はここ。メモインポートは過去の実績のみ受け付けます。</div>", "preview": "<h3>📸 案内表示タブの使い方</h3>\n<ol>\n<li>この画面をスクリーンショットして連盟チャットへ共有</li>\n<li>‹ › ボタンで過去・未来の週を切り替え</li>\n</ol>\n<div class=\"warn\">⚠️ この画面にはボタン類を表示していません。スクショ用です。</div>", "history": "<h3>📋 履歴タブの使い方</h3>\n<ol>\n<li>保存済みの週間スケジュールを一覧で確認</li>\n<li>「詳細」で内容を展開、「削除」で削除</li>\n</ol>\n<div class=\"warn\">⚠️ ここは閲覧・削除のみ。過去データの入力は管理者タブのメモインポートから。</div>", "admin": "<h3>⚙️ 管理者タブの使い方</h3>\n<ol>\n<li>各メンバーの前回任命日・経過日数を確認できる</li>\n<li>✏️ボタンで前回任命日を直接編集</li>\n<li>経過日数の色：赤=30日超 / オレンジ=14日超 / 緑=14日以内 / 未設定=最優先</li>\n<li>「対象外」ボタンで自動入力の選出から除外（休止中・脱退予定など）。もう一度タップで対象に戻す</li>\n<li>対象外の人は自動入力でスキップ。手動検索では半透明で選択可能</li>\n<li>「1名手動追加」で連盟員を追加（ランク選択あり）</li>\n<li>メモインポートで過去実績を一括登録。名前不一致はドロップダウンで紐付け</li>\n</ol>\n<div class=\"warn\">⚠️ メモインポートは過去実績のみ。未来日付は自動で弾きます。予定はスケジュールタブへ。</div>"};
 let helpOpen = false;
 
 function toggleHelp(ev) {
