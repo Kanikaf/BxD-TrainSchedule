@@ -616,10 +616,10 @@ function importMemo() {
   unmatchedItems = [];
 
   for (let line of lines) {
-    line = line.trim(); if (!line) return;
+    line = line.trim(); if (!line) continue;
     const lh = zenToHan(line);
     const mh = lh.match(/^(\d+)月/);
-    if (mh && /[月度車掌]/.test(line)) { currentMonth = parseInt(mh[1]); return; }
+    if (mh && /[月度車掌]/.test(line)) { currentMonth = parseInt(mh[1]); continue; }
     const md = lh.match(/^(\d+)日[\s\u3000]+(.+)/);
     if (md && currentMonth !== null) {
       const day = parseInt(md[1]); const name = md[2].trim();
