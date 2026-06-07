@@ -22,8 +22,8 @@ body{font-family:'Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;backgroun
 .tabbar{display:flex;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:53px;z-index:99;overflow-x:auto}
 .tabbar button{flex:1;min-width:60px;padding:11px 4px 10px;border:none;background:transparent;font-size:12px;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;font-family:inherit;white-space:nowrap}
 .tabbar button.active{color:var(--green);border-bottom-color:var(--green);font-weight:600}
-.page{display:none;padding:14px 14px 80px;max-width:520px;margin:0 auto}
-.page.active{display:block}
+.page{display:none !important;padding:14px 14px 80px;max-width:520px;margin:0 auto}
+.page.active{display:block !important}
 .card{background:#fff;border-radius:var(--radius);border:1px solid var(--border);padding:14px;margin-bottom:12px}
 .card-title{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:10px;display:flex;align-items:center;gap:6px}
 .icon{width:20px;height:20px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
@@ -142,7 +142,6 @@ label:first-child{margin-top:0}
   <button onclick="showPage('schedule')" id="tab-schedule" class="active">スケジュール</button>
   <button onclick="showPage('preview')" id="tab-preview">案内表示</button>
   <button onclick="showPage('history')" id="tab-history">履歴</button>
-  <button onclick="showPage('members')" id="tab-members">連盟員</button>
   <button onclick="showPage('admin')" id="tab-admin">管理者</button>
 </div>
 <div id="toast"></div>
@@ -189,10 +188,6 @@ label:first-child{margin-top:0}
   <div id="history-detail"></div>
 </div>
 
-<!-- ══ 連盟員一覧（参照用） ══ -->
-<div class="page" id="page-members">
-  <div class="stats">
-    <div class="stat"><div class="stat-n" id="sm-total">0</div><div class="stat-l">総人数</div></div>
     <div class="stat"><div class="stat-n" id="sm-pos">0</div><div class="stat-l">現在位置</div></div>
     <div class="stat"><div class="stat-n" id="sm-left">0</div><div class="stat-l">残り人数</div></div>
   </div>
@@ -228,7 +223,6 @@ label:first-child{margin-top:0}
     </div>
     <div class="order-list" id="order-list"></div>
   </div>
-  </div>
 
   <!-- 1名追加 -->
   <div class="card">
@@ -241,6 +235,21 @@ label:first-child{margin-top:0}
       <button class="btn btn-primary btn-sm" onclick="addOne()" style="margin-bottom:1px">追加</button>
     </div>
   </div>
+
+
+  <!-- メモ一括インポート -->
+  <div class="card">
+    <div class="card-title"><span class="icon ip">📋</span>車掌メモから一括インポート</div>
+    <p style="font-size:12px;color:var(--text3);margin-bottom:8px">毎月のメモをそのまま貼り付けてください。複数月まとめてもOKです。</p>
+    <div style="background:var(--gray1);border-radius:var(--radius-sm);padding:8px 10px;font-size:12px;color:var(--text2);margin-bottom:8px;border:1px solid var(--gray2)">
+      例：６月度車掌<br>１日　1000まん<br>２日　ながらブン
+    </div>
+    <textarea id="memo-input" rows="7" placeholder="ここにメモを貼り付け"></textarea>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="importMemo()">📥 インポート</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('memo-input').value=''">クリア</button>
+    </div>
+    <div id="memo-result" style="margin-top:8px;font-size:12px"></div>
   </div>
 
   <!-- 過去履歴手動入力 -->
@@ -303,7 +312,6 @@ const DEFAULT_MEMBERS=[
 
 let S=loadS();
 let adminRankFilter='all';
-let membersRankFilter='all';
 
 function loadS(){
   try{const r=localStorage.getItem(SKEY);if(r)return JSON.parse(r);}catch(e){}
@@ -314,14 +322,23 @@ function save(){try{localStorage.setItem(SKEY,JSON.stringify(S));}catch(e){}}
 // ── computed: conductor stats from schedules ──
 function buildStats(){
   const stats={};
+  // Seed from memo import history
+  if(S.conductorHistory){
+    Object.entries(S.conductorHistory).forEach(([name,dateStr])=>{
+      if(!stats[name])stats[name]={count:0,last:''};
+      if(dateStr>stats[name].last)stats[name].last=dateStr;
+    });
+  }
+  // From saved schedules (count + most recent date)
   Object.entries(S.schedules).forEach(([weekKey,days])=>{
-    days.forEach(d=>{
+    days.forEach((d,i)=>{
       if(d.conductor){
         if(!stats[d.conductor])stats[d.conductor]={count:0,last:''};
         stats[d.conductor].count++;
-        const dateStr=weekKey; // use week key as proxy for sorting
-        if(!stats[d.conductor].last||dateStr>stats[d.conductor].last)
-          stats[d.conductor].last=weekKey;
+        const dd=new Date(weekKey+'T00:00:00');dd.setDate(dd.getDate()+i);
+        const ds=iso(dd);
+        if(!stats[d.conductor].last||ds>stats[d.conductor].last)
+          stats[d.conductor].last=ds;
       }
     });
   });
@@ -332,7 +349,7 @@ function buildStats(){
 function fmtWeek(key){
   if(!key)return '—';
   const d=new Date(key+'T00:00:00');
-  return `${d.getMonth()+1}/${d.getDate()}週`;
+  return `${d.getMonth()+1}/${d.getDate()}`;
 }
 
 // ── init ──
@@ -353,7 +370,6 @@ function showPage(n){
   document.getElementById('tab-'+n).classList.add('active');
   if(n==='preview')renderPreview();
   if(n==='history')renderHistory();
-  if(n==='members')renderMembersTab();
   if(n==='admin'){renderOrderList();}
 }
 
@@ -368,7 +384,62 @@ function monOf(s){const d=new Date(s+'T00:00:00');const dw=d.getDay();d.setDate(
 function iso(d){return d.toISOString().slice(0,10)}
 function fd(d){return`${d.getMonth()+1}/${d.getDate()}`}
 function today(){return iso(new Date())}
-function setThisMonday(){document.getElementById('sched-week-start').value=iso(monOf(today()));buildDayRows();}
+function setThisMonday(){
+// ── memo import ──
+function zenToHan(s){
+  return s.replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0));
+}
+function importMemo(){
+  const raw=document.getElementById('memo-input').value.trim();
+  if(!raw)return toast('メモを貼り付けてください');
+
+  const lines=raw.split(/[\n\r]+/);
+  let currentMonth=null;
+  const today=new Date();
+  const currentYear=today.getFullYear();
+  const imported=[];
+  const notFound=[];
+
+  lines.forEach(line=>{
+    line=line.trim();if(!line)return;
+    const lh=zenToHan(line);
+    // Month header: 6月度車掌 or ６月度 etc
+    const mh=lh.match(/^(\d+)月/);
+    if(mh&&/[月度車掌]/.test(line)){currentMonth=parseInt(mh[1]);return;}
+    // Day line: 1日　名前
+    const md=lh.match(/^(\d+)日[\s\u3000]+(.+)/);
+    if(md&&currentMonth!==null){
+      const day=parseInt(md[1]);
+      const name=md[2].trim();
+      let year=currentYear;
+      // if this date is in the future, use previous year
+      const d=new Date(year,currentMonth-1,day);
+      if(d>today)year=currentYear-1;
+      const dateStr=`${year}-${String(currentMonth).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      // find member (fuzzy: exact or contains)
+      const member=S.members.find(m=>m.name===name)
+        ||S.members.find(m=>m.name.includes(name)||name.includes(m.name));
+      if(member){
+        // Store in conductorHistory: {name -> lastDate}
+        if(!S.conductorHistory)S.conductorHistory={};
+        if(!S.conductorHistory[member.name]||dateStr>S.conductorHistory[member.name])
+          S.conductorHistory[member.name]=dateStr;
+        imported.push(`${currentMonth}/${day} ${member.name}`);
+      } else {
+        notFound.push(`${currentMonth}/${day} ${name}`);
+      }
+    }
+  });
+
+  save();
+  const res=document.getElementById('memo-result');
+  let html='';
+  if(imported.length)html+=`<div style="color:var(--green-dark)">✓ ${imported.length}件をインポートしました</div>`;
+  if(notFound.length)html+=`<div style="color:var(--amber);margin-top:4px">⚠ 名前が一致しなかった行：<br>${notFound.join('、')}</div>`;
+  res.innerHTML=html;
+  if(imported.length)toast(`${imported.length}件インポート完了`);
+}
+document.getElementById('sched-week-start').value=iso(monOf(today()));buildDayRows();}
 function setNextMonday(){const m=monOf(today());m.setDate(m.getDate()+7);document.getElementById('sched-week-start').value=iso(m);buildDayRows();}
 
 // ── auto fill ──
@@ -384,13 +455,41 @@ function autoFill(){
   if(!S.members.length){toast('連盟員を登録してください');return;}
   const ws=document.getElementById('sched-week-start').value;
   if(!ws){toast('開始日を選んでください');return;}
-  const conductors=peekN(7);
+
+  // Build last-assigned date per member from schedule history + memo imports
+  const lastDate={};
+  // From memo import history
+  if(S.conductorHistory){
+    Object.entries(S.conductorHistory).forEach(([name,date])=>{
+      lastDate[name]=date;
+    });
+  }
+  // From saved schedules (may override if more recent)
+  Object.entries(S.schedules).forEach(([weekKey,days])=>{
+    days.forEach((d,i)=>{
+      if(d.conductor){
+        const dd=new Date(weekKey+'T00:00:00');dd.setDate(dd.getDate()+i);
+        const ds=iso(dd);
+        if(!lastDate[d.conductor]||ds>lastDate[d.conductor])lastDate[d.conductor]=ds;
+      }
+    });
+  });
+
+  const today=new Date();
+  // Sort members by days-since-last-assignment descending (never assigned = Infinity)
+  const sorted=[...S.members].sort((a,b)=>{
+    const da=lastDate[a.name]?Math.floor((today-new Date(lastDate[a.name]+'T00:00:00'))/86400000):Infinity;
+    const db=lastDate[b.name]?Math.floor((today-new Date(lastDate[b.name]+'T00:00:00'))/86400000):Infinity;
+    return db-da;
+  });
+
+  const conductors=sorted.slice(0,7);
   for(let i=0;i<7;i++){
     const c=document.getElementById('c_'+i);const v=document.getElementById('v_'+i);
     if(c){c.value=conductors[i]?.name||'';c.classList.add('af');}
     if(v){const vn=i===0?'':(conductors[i-1]?.name||'');v.value=vn;v.classList.toggle('af',!!vn);}
   }
-  updateRotStatus();toast('自動入力完了 ✓ 必要なら上書きしてください');
+  updateRotStatus();toast('自動入力完了 ✓ 間が空いている順に並べました');
 }
 
 function updateRotStatus(){
@@ -455,9 +554,7 @@ function saveSchedule(){
     if(c||v)any=true;
   }
   if(!any)return toast('少なくとも1名入力してください');
-  const isNew=!S.schedules[key];
   S.schedules[key]=days;
-  if(isNew)advRot(days.filter(d=>d.conductor).length);
   const keys=Object.keys(S.schedules).sort();S.previewIdx=keys.indexOf(key);
   save();updateRotStatus();toast('保存しました ✓');
   setTimeout(()=>showPage('preview'),400);
@@ -527,35 +624,6 @@ function delW(key){
 }
 
 // ── members tab ──
-function setRankFilter(r){
-  membersRankFilter=r;
-  document.querySelectorAll('#rank-filter .filter-btn').forEach(b=>b.classList.toggle('active',b.dataset.rank===r));
-  renderMembersTab();
-}
-function renderMembersTab(){
-  const pos=S.rotPos%Math.max(1,S.members.length);
-  document.getElementById('sm-total').textContent=S.members.length;
-  document.getElementById('sm-pos').textContent=pos+1;
-  document.getElementById('sm-left').textContent=S.members.length-pos;
-  const stats=buildStats();
-  const fil=membersRankFilter==='all'?S.members:S.members.filter(m=>m.rank===membersRankFilter);
-  const list=document.getElementById('member-list-view');
-  if(!fil.length){list.innerHTML='<div class="empty">該当なし</div>';return;}
-  list.innerHTML='<div class="order-list">'+fil.map(m=>{
-    const gi=S.members.indexOf(m);
-    const isPast=gi<pos;const isCur=gi===pos;
-    const st=stats[m.name]||{count:0,last:''};
-    return`<div class="order-row ${isPast?'is-done':''} ${isCur?'is-current':''}">
-      <span class="order-seq ${isCur?'ptr':''}">${isCur?'▶':(gi+1)}</span>
-      <span class="order-name">${m.name}</span>
-      <span class="rank rank-${m.rank}">${m.rank}</span>
-      <div class="order-stats">
-        <span class="order-cnt">🚂 ${st.count}回</span>
-        <span class="order-last">${fmtWeek(st.last)}</span>
-      </div>
-    </div>`;
-  }).join('')+'</div>';
-}
 
 // ── admin: order editor ──
 function setAdminFilter(r){
@@ -666,7 +734,25 @@ function saveMH(){
   for(let i=0;i<7;i++){document.getElementById('mhc_'+i).value='';document.getElementById('mhv_'+i).value='';}
 }
 
-document.getElementById('sched-week-start').addEventListener('change',()=>{buildDayRows();updateRotStatus();});
+document.getElementById('sched-week-start').addEventListener('change',()=>{
+  buildDayRows();
+  updateRotStatus();
+  loadExistingSchedule();
+});
+
+function loadExistingSchedule(){
+  const ws=document.getElementById('sched-week-start').value;
+  if(!ws)return;
+  const key=iso(monOf(ws));
+  const existing=S.schedules[key];
+  if(!existing)return;
+  existing.forEach((d,i)=>{
+    const c=document.getElementById('c_'+i);
+    const v=document.getElementById('v_'+i);
+    if(c&&d.conductor){c.value=d.conductor;c.classList.remove('af');}
+    if(v&&d.vip){v.value=d.vip;v.classList.remove('af');}
+  });
+}
 </script>
 </body>
 </html>
