@@ -264,7 +264,7 @@ function loadS() {
 function save() { try { localStorage.setItem(SKEY, JSON.stringify(S)); } catch(e) {} }
 
 // ── utils ──
-function monOf(s) { const d = new Date(s+'T00:00:00'); const dw = d.getDay(); d.setDate(d.getDate()+(dw===0?-6:1-dw)); return d; }
+function monOf(s) { const d = new Date(s+'T00:00:00'); const dw = d.getDay(); d.setDate(d.getDate()+(dw===0?1:1-dw)); return d; }
 function iso(d) { return d.toISOString().slice(0,10); }
 function fd(d) { return `${d.getMonth()+1}/${d.getDate()}`; }
 function todayISO() { return iso(new Date()); }
@@ -291,8 +291,11 @@ function setThisMonday() {
   buildDayRows();
 }
 function setNextMonday() {
-  const m = monOf(todayISO()); m.setDate(m.getDate()+7);
-  document.getElementById('sched-week-start').value = iso(m);
+  const thisMonday = monOf(todayISO());
+  // Always go forward from this week's Monday, not from today
+  const next = new Date(thisMonday);
+  next.setDate(thisMonday.getDate() + 7);
+  document.getElementById('sched-week-start').value = iso(next);
   buildDayRows();
 }
 
