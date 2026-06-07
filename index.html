@@ -411,12 +411,7 @@ function closeEdit(){
   if(el)el.remove();
 }
 
-function delM(name){
-  if(!confirm(`「${name}」を削除しますか？`))return;
-  S.members=S.members.filter(m=>m.name!==name);
-  if(S.conductorHistory)delete S.conductorHistory[name];
-  save();renderAdminList();updateRotStatus();
-}
+
 // ── memo import ──
 function zenToHan(s){
   return s.replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0));
@@ -667,6 +662,7 @@ function delM(name){
   const idx=S.members.findIndex(m=>m.name===name);
   if(idx<S.rotPos&&S.rotPos>0)S.rotPos=Math.max(0,S.rotPos-1);
   S.members=S.members.filter(m=>m.name!==name);
+  if(S.conductorHistory)delete S.conductorHistory[name];
   save();renderAdminList();updateRotStatus();
 }
 
