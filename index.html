@@ -733,10 +733,18 @@ function editLastDate(name) {
     <span style="font-size:13px;font-weight:600;flex:1">${name}</span>
     <input type="date" id="edit-date-inp" value="${last||''}" style="width:150px;font-size:13px">
     <button class="btn btn-primary btn-sm" onclick="saveLastDate('${name.replace(/'/g,"\\'")}')">保存</button>
+    <button class="btn btn-danger btn-sm" onclick="clearLastDate('${name.replace(/'/g,"\\'")}')">日付を削除</button>
     <button class="btn btn-secondary btn-sm" onclick="closeEdit()">閉じる</button>
   `;
   document.getElementById('admin-member-list').appendChild(editDiv);
   document.getElementById('edit-date-inp').focus();
+}
+
+function clearLastDate(name) {
+  if (!confirm(`「${name}」の前回任命日を削除しますか？`)) return;
+  if (S.conductorHistory) delete S.conductorHistory[name];
+  save(); editingName = null; renderAdminList();
+  toast(`${name} の前回任命日を削除しました`);
 }
 
 function saveLastDate(name) {
