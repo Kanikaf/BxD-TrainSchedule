@@ -818,10 +818,12 @@ function linkAllUnmatched() {
 
 // ── init ──
 document.addEventListener('DOMContentLoaded', function() {
-  // Default to next Monday on load
+  // Default: if Sunday → this week's Monday, else → next Monday
+  const todayD = new Date(todayISO()+'T00:00:00');
+  const isSunday = todayD.getDay() === 0;
   const thisM = monOf(todayISO());
-  const nextM = new Date(thisM); nextM.setDate(thisM.getDate()+7);
-  document.getElementById('sched-week-start').value = iso(nextM);
+  const defaultM = isSunday ? thisM : new Date(thisM.getFullYear(), thisM.getMonth(), thisM.getDate()+7);
+  document.getElementById('sched-week-start').value = iso(defaultM);
   buildDayRows();
   loadExistingSchedule();
   renderAdminList();
