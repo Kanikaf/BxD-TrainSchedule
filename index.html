@@ -261,6 +261,7 @@ function loadS() {
     if (r) {
       const d = JSON.parse(r);
       if (!d.conductorHistory) d.conductorHistory = {};
+      if (!d.excluded) d.excluded = {};
       return d;
     }
   } catch(e) {}
@@ -268,7 +269,7 @@ function loadS() {
     const ra=RANK_ORDER[a.rank]??9, rb=RANK_ORDER[b.rank]??9;
     return ra!==rb ? ra-rb : a.name.localeCompare(b.name,'ja');
   });
-  return { members: def, rotPos: 0, schedules: {}, previewIdx: 0, conductorHistory: {} };
+  return { members: def, rotPos: 0, schedules: {}, previewIdx: 0, conductorHistory: {}, excluded: {} };
 }
 function save() { try { localStorage.setItem(SKEY, JSON.stringify(S)); } catch(e) {} }
 
@@ -325,14 +326,24 @@ function buildDayRows() {
     container.appendChild(row);
   }
   // Pre-fill Monday VIP from previous week's Sunday conductor
+  // (Done after loop so DOM elements exist)
   const prevSunday = new Date(mon); prevSunday.setDate(mon.getDate() - 1);
-  const prevWeekKey = iso(monOf(iso(prevSunday)));
+  const prevSundayStr = iso(prevSunday);
+  const prevWeekKey = iso(monOf(prevSundayStr));
   const prevSchedule = S.schedules[prevWeekKey];
-  if (prevSchedule) {
-    const sundayEntry = prevSchedule[6]; // index 6 = Sunday
-    if (sundayEntry && sundayEntry.conductor) {
-      const mondayVip = document.getElementById('v_0');
-      if (mondayVip && !mondayVip.value) mondayVip.value = sundayEntry.conductor;
+  let prevSunConductorBD = '';
+  if (prevSchedule && prevSchedule[6]?.conductor) {
+    prevSunConductorBD = prevSchedule[6].conductor;
+  } else if (S.conductorHistory) {
+    const match = Object.entries(S.conductorHistory).find(([name, date]) => date === prevSundayStr);
+    if (match) prevSunConductorBD = match[0];
+  }
+  if (prevSunConductorBD) {
+    // v_0 is now in DOM after the loop above
+    const mondayVip = document.getElementById('v_0');
+    if (mondayVip && !mondayVip.value) {
+      mondayVip.value = prevSunConductorBD;
+      mondayVip.classList.add('af');
     }
   }
 }
@@ -392,7 +403,9 @@ function autoFill() {
     });
   });
   const now = new Date();
-  const sorted = [...S.members].sort((a, b) => {
+  // Filter out excluded members
+  const eligible = S.members.filter(m => !S.excluded || !S.excluded[m.name]);
+  const sorted = [...eligible].sort((a, b) => {
     const da = lastDate[a.name] ? Math.floor((now - new Date(lastDate[a.name]+'T00:00:00'))/86400000) : Infinity;
     const db = lastDate[b.name] ? Math.floor((now - new Date(lastDate[b.name]+'T00:00:00'))/86400000) : Infinity;
     return db - da;
@@ -402,10 +415,17 @@ function autoFill() {
   let prevSunConductor = '';
   if (ws2) {
     const mon2 = monOf(ws2);
-    const prevSun = new Date(mon2); prevSun.setDate(mon2.getDate()-1);
-    const prevKey = iso(monOf(iso(prevSun)));
+    const prevSun2 = new Date(mon2); prevSun2.setDate(mon2.getDate()-1);
+    const prevSunStr2 = iso(prevSun2);
+    const prevKey = iso(monOf(prevSunStr2));
     const prevSched = S.schedules[prevKey];
-    if (prevSched && prevSched[6]?.conductor) prevSunConductor = prevSched[6].conductor;
+    if (prevSched && prevSched[6]?.conductor) {
+      prevSunConductor = prevSched[6].conductor;
+    } else if (S.conductorHistory) {
+      // Fallback: check conductorHistory for prev Sunday
+      const match = Object.entries(S.conductorHistory).find(([name, date]) => date === prevSunStr2);
+      if (match) prevSunConductor = match[0];
+    }
   }
 
   for (let i = 0; i < 7; i++) {
@@ -563,17 +583,31 @@ function renderAdminList() {
         ? `<span style="color:var(--text3)">未設定</span>`
         : `<span style="color:${days>30?'var(--red)':days>14?'var(--amber)':'var(--green)'}">${days}日前</span>`;
       const lastLabel = last ? last.slice(5).replace('-','/') : '—';
-      return `<div style="background:var(--gray1);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;display:flex;align-items:center;gap:8px">
-        <span style="flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name}</span>
+            const isExcluded = S.excluded && S.excluded[m.name];
+      return `<div style="background:${isExcluded?'var(--red-light)':'var(--gray1)'};border:1px solid ${isExcluded?'#f5c6c6':'var(--border)'};border-radius:var(--radius-sm);padding:8px 10px;display:flex;align-items:center;gap:6px;opacity:${isExcluded?'0.65':'1'}">
+        <span style="flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${isExcluded?'text-decoration:line-through;color:var(--text3)':''}">${m.name}</span>
         <span class="rank rank-${m.rank}">${m.rank}</span>
-        <button onclick="editLastDate('${m.name.replace(/'/g,"\\'")}')"
+        <button onclick="toggleExclude('${m.name.replace(/'/g,"\'")}')"
+          style="font-size:10px;border:1px solid ${isExcluded?'var(--red)':'var(--gray3)'};border-radius:var(--radius-sm);padding:2px 6px;background:${isExcluded?'var(--red-light)':'#fff'};cursor:pointer;color:${isExcluded?'var(--red)':'var(--text3)'};white-space:nowrap">
+          ${isExcluded?'対象外✓':'対象外'}
+        </button>
+        <button onclick="editLastDate('${m.name.replace(/'/g,"\'")}')"
           style="font-size:11px;border:1px solid var(--gray3);border-radius:var(--radius-sm);padding:3px 8px;background:#fff;cursor:pointer;color:var(--text2);white-space:nowrap">
           ${lastLabel} ✏️
         </button>
         ${daysLabel}
-        <button onclick="delM('${m.name.replace(/'/g,"\\'")}')" style="background:none;border:none;color:var(--gray4);cursor:pointer;font-size:16px;padding:0 2px">×</button>
+        <button onclick="delM('${m.name.replace(/'/g,"\'")}')" style="background:none;border:none;color:var(--gray4);cursor:pointer;font-size:16px;padding:0 2px">×</button>
       </div>`;
     }).join('') + '</div>';
+}
+
+function toggleExclude(name) {
+  if (!S.excluded) S.excluded = {};
+  S.excluded[name] = !S.excluded[name];
+  if (!S.excluded[name]) delete S.excluded[name];
+  save();
+  renderAdminList();
+  toast(`${name} を${S.excluded&&S.excluded[name]?'対象外':'対象'}にしました`);
 }
 
 function editLastDate(name) {
