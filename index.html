@@ -417,9 +417,17 @@ function selN(id, di, role, name, ev) {
   ev.preventDefault();
   const el = document.getElementById(id); el.value = name; el.classList.remove('af');
   document.getElementById(id+'_d').classList.remove('open');
-  if (role === 'conductor' && di < 6) {
-    const nv = document.getElementById('v_'+(di+1));
-    if (nv && !nv.value) { nv.value = name; nv.classList.remove('af'); }
+  if (role === 'conductor') {
+    // Always update next day's VIP (overwrite)
+    if (di < 6) {
+      const nv = document.getElementById('v_'+(di+1));
+      if (nv) { nv.value = name; nv.classList.remove('af'); }
+    }
+    // If Sunday (di=6), update next week's Monday VIP if that week is open
+    if (di === 6) {
+      const mondayVip = document.getElementById('v_0');
+      // Only update if same week context doesn't apply — handled by buildDayRows
+    }
   }
 }
 
