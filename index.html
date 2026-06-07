@@ -126,8 +126,7 @@ label:first-child{margin-top:0}
     <label>週の開始日（月曜日）</label>
     <input type="date" id="sched-week-start">
     <div class="btn-row">
-      <button class="btn btn-secondary btn-sm" onclick="setThisMonday()">今週</button>
-      <button class="btn btn-secondary btn-sm" onclick="setNextMonday()">来週</button>
+<button class="btn btn-secondary btn-sm" onclick="setNextMonday()">来週</button>
       <button class="btn btn-primary btn-sm" onclick="autoFill()">🔄 自動入力</button>
     </div>
   </div>
@@ -275,6 +274,8 @@ function save() { try { localStorage.setItem(SKEY, JSON.stringify(S)); } catch(e
 
 // ── utils ──
 function monOf(s) { const d = new Date(s+'T00:00:00'); const dw = d.getDay(); d.setDate(d.getDate()+(dw===0?1:1-dw)); return d; }
+// For getting the week-key of a Sunday (belongs to the PREVIOUS week's Mon-Sun)
+function weekMonOf(s) { const d = new Date(s+'T00:00:00'); const dw = d.getDay(); d.setDate(d.getDate()+(dw===0?-6:1-dw)); return d; }
 function iso(d) {
   const y = d.getFullYear();
   const m = String(d.getMonth()+1).padStart(2,'0');
@@ -301,14 +302,6 @@ function showPage(n) {
 }
 
 // ── schedule ──
-function setThisMonday() {
-  autoSaveCurrentWeek(() => {
-    document.getElementById('sched-week-start').value = iso(monOf(todayISO()));
-    buildDayRows();
-    loadExistingSchedule();
-    updateRotStatus();
-  });
-}
 function setNextMonday() {
   autoSaveCurrentWeek(() => {
     const thisMonday = monOf(todayISO());
@@ -368,7 +361,7 @@ function buildDayRows() {
   // (Done after loop so DOM elements exist)
   const prevSunday = new Date(mon); prevSunday.setDate(mon.getDate() - 1);
   const prevSundayStr = iso(prevSunday);
-  const prevWeekKey = iso(monOf(prevSundayStr));
+  const prevWeekKey = iso(weekMonOf(prevSundayStr));
   const prevSchedule = S.schedules[prevWeekKey];
   let prevSunConductorBD = '';
   if (prevSchedule && prevSchedule[6]?.conductor) {
@@ -464,7 +457,7 @@ function autoFill() {
     const mon2 = monOf(ws2);
     const prevSun2 = new Date(mon2); prevSun2.setDate(mon2.getDate()-1);
     const prevSunStr2 = iso(prevSun2);
-    const prevKey = iso(monOf(prevSunStr2));
+    const prevKey = iso(weekMonOf(prevSunStr2));
     const prevSched = S.schedules[prevKey];
     if (prevSched && prevSched[6]?.conductor) {
       prevSunConductor = prevSched[6].conductor;
@@ -825,7 +818,12 @@ function linkAllUnmatched() {
 
 // ── init ──
 document.addEventListener('DOMContentLoaded', function() {
-  setThisMonday();
+  // Default to next Monday on load
+  const thisM = monOf(todayISO());
+  const nextM = new Date(thisM); nextM.setDate(thisM.getDate()+7);
+  document.getElementById('sched-week-start').value = iso(nextM);
+  buildDayRows();
+  loadExistingSchedule();
   renderAdminList();
   renderHistory();
   renderPreview();
@@ -844,7 +842,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <button class="help-btn" onclick="toggleHelp(event)">？</button>
 <script>
 // ── help ──
-const HELP_CONTENT = {"schedule": "<h3>📅 スケジュールタブの使い方</h3>\n<ol>\n<li>週の開始日を選ぶ（「今週」「来週」ボタンで簡単設定）</li>\n<li>「🔄 自動入力」で前回任命からの経過日数が長い順に7名が自動でセット</li>\n<li>変更したい日は名前欄をタップ→検索して上書き</li>\n<li>車掌を選ぶと翌日のVIPに自動コピー（週またぎも対応）</li>\n<li>「保存して案内表示へ」で完了</li>\n</ol>\n<div class=\"warn\">⚠️ 予定を入力する場所はここ。メモインポートは過去の実績のみ受け付けます。</div>", "preview": "<h3>📸 案内表示タブの使い方</h3>\n<ol>\n<li>この画面をスクリーンショットして連盟チャットへ共有</li>\n<li>‹ › ボタンで過去・未来の週を切り替え</li>\n</ol>\n<div class=\"warn\">⚠️ この画面にはボタン類を表示していません。スクショ用です。</div>", "history": "<h3>📋 履歴タブの使い方</h3>\n<ol>\n<li>保存済みの週間スケジュールを一覧で確認</li>\n<li>「詳細」で内容を展開、「削除」で削除</li>\n</ol>\n<div class=\"warn\">⚠️ ここは閲覧・削除のみ。過去データの入力は管理者タブのメモインポートから。</div>", "admin": "<h3>⚙️ 管理者タブの使い方</h3>\n<ol>\n<li>各メンバーの前回任命日・経過日数を確認できる</li>\n<li>✏️ボタンで前回任命日を直接編集</li>\n<li>経過日数の色：赤=30日超 / オレンジ=14日超 / 緑=14日以内 / 未設定=最優先</li>\n<li>「対象外」ボタンで自動入力の選出から除外（休止中・脱退予定など）。もう一度タップで対象に戻す</li>\n<li>対象外の人は自動入力でスキップ。手動検索では半透明で選択可能</li>\n<li>「1名手動追加」で連盟員を追加（ランク選択あり）</li>\n<li>メモインポートで過去実績を一括登録。名前不一致はドロップダウンで紐付け</li>\n</ol>\n<div class=\"warn\">⚠️ メモインポートは過去実績のみ。未来日付は自動で弾きます。予定はスケジュールタブへ。</div>"};
+const HELP_CONTENT = {"schedule": "<h3>📅 スケジュールタブの使い方</h3>\n<ol>\n<li>毎週日〜土のどこかで来週分を作成する</li>\n<li>「来週」ボタンで来週の月曜日を自動セット</li>\n<li>「🔄 自動入力」で前回任命からの経過日数が長い順に7名が自動でセット</li>\n<li>変更したい日は名前欄をタップ→検索して上書き（車掌を変えると翌日VIPも自動更新）</li>\n<li>日曜の車掌は翌週月曜のVIPに自動引き継ぎ</li>\n<li>「保存して案内表示へ」で完了 → 案内表示タブでスクショして共有</li>\n</ol>\n<div class=\"warn\">⚠️ 予定を入力する場所はここ。メモインポートは過去の実績のみ受け付けます。</div>", "preview": "<h3>📸 案内表示タブの使い方</h3>\n<ol>\n<li>この画面をスクリーンショットして連盟チャットへ共有</li>\n<li>‹ › ボタンで過去・未来の週を切り替え</li>\n</ol>\n<div class=\"warn\">⚠️ この画面にはボタン類を表示していません。スクショ用です。</div>", "history": "<h3>📋 履歴タブの使い方</h3>\n<ol>\n<li>保存済みの週間スケジュールを一覧で確認</li>\n<li>「詳細」で内容を展開、「削除」で削除</li>\n</ol>\n<div class=\"warn\">⚠️ ここは閲覧・削除のみ。過去データの入力は管理者タブのメモインポートから。</div>", "admin": "<h3>⚙️ 管理者タブの使い方</h3>\n<ol>\n<li>各メンバーの前回任命日・経過日数を確認できる</li>\n<li>✏️ボタンで前回任命日を直接編集</li>\n<li>経過日数の色：赤=30日超 / オレンジ=14日超 / 緑=14日以内 / 未設定=最優先</li>\n<li>「対象外」ボタンで自動入力の選出から除外（休止中・脱退予定など）。もう一度タップで対象に戻す</li>\n<li>対象外の人は自動入力でスキップ。手動検索では半透明で選択可能</li>\n<li>「1名手動追加」で連盟員を追加（ランク選択あり）</li>\n<li>メモインポートで過去実績を一括登録。名前不一致はドロップダウンで紐付け</li>\n</ol>\n<div class=\"warn\">⚠️ メモインポートは過去実績のみ。未来日付は自動で弾きます。予定はスケジュールタブへ。</div>"};
 let helpOpen = false;
 
 function toggleHelp(ev) {
