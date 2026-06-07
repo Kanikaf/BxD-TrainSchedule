@@ -580,7 +580,7 @@ function saveSchedule() {
     days.push({ day: DAYS[i], date: fd(d), conductor: c, vip: v });
     if (c || v) any = true;
   }
-  if (!any) return toast('少なくとも1名入力してください');
+  // Allow saving empty schedule (to clear a week)
   S.schedules[key] = days;
   S.previewIdx = Object.keys(S.schedules).sort().indexOf(key);
   save(); updateRotStatus(); toast('保存しました ✓');
