@@ -59,22 +59,22 @@ label:first-child{margin-top:0}
 .rank-R2{background:#fdecea;color:#a32d2d}
 .rank-R1{background:var(--gray2);color:var(--gray4)}
 
-/* ── ORDER EDITOR (管理者・並び替え) ── */
-.order-info{background:var(--amber-light);border:1px solid #e8c97a;border-radius:var(--radius-sm);padding:8px 12px;font-size:12px;color:var(--amber);margin-bottom:10px}
-.order-list{display:flex;flex-direction:column;gap:4px;max-height:480px;overflow-y:auto}
-.order-row{background:#fff;border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;display:flex;align-items:center;gap:8px;transition:background .1s}
+
+
+
+
 .order-row.is-done{opacity:.45}
 .order-row.is-current{border-color:var(--green);background:var(--green-light)}
-.order-seq{font-size:12px;font-weight:700;color:var(--text3);min-width:24px;text-align:right}
-.order-seq.ptr{color:var(--green)}
-.order-name{flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+
+
 /* stats mini */
-.order-stats{display:flex;flex-direction:column;align-items:flex-end;gap:1px;flex-shrink:0}
-.order-cnt{font-size:11px;color:var(--green-dark);font-weight:600;white-space:nowrap}
-.order-last{font-size:10px;color:var(--text3);white-space:nowrap}
+
+
+
 /* move buttons */
-.move-btns{display:flex;flex-direction:column;gap:2px;flex-shrink:0}
-.mv{width:28px;height:22px;border:1px solid var(--gray3);border-radius:4px;background:#fff;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text2);line-height:1}
+
+
 .mv:active{background:var(--gray2);transform:scale(.93)}
 .mv:disabled{opacity:.25;cursor:default}
 
@@ -150,81 +150,26 @@ label:first-child{margin-top:0}
 <div class="page active" id="page-schedule">
   <div class="card">
     <div class="card-title"><span class="icon ig">📅</span>週の設定</div>
-    <label>週の開始日（月曜日）</label>
-    <input type="date" id="sched-week-start">
-    <div class="btn-row">
-      <button class="btn btn-secondary btn-sm" onclick="setThisMonday()">今週</button>
-      <button class="btn btn-secondary btn-sm" onclick="setNextMonday()">来週</button>
-      <button class="btn btn-primary btn-sm" onclick="autoFill()">🔄 自動入力</button>
-    </div>
-  </div>
-  <div id="rot-status"></div>
-  <div class="card">
-    <div class="card-title"><span class="icon ig">✍️</span>各日の担当 <span style="font-size:11px;color:var(--text3);font-weight:400;margin-left:4px">名前検索で上書き可</span></div>
-    <div id="days-container"></div>
-  </div>
-  <div class="card">
-    <button class="btn btn-primary" onclick="saveSchedule()" style="width:100%">💾 保存して案内表示へ</button>
-  </div>
-</div>
-
-<!-- ══ 案内表示 ══ -->
-<div class="page" id="page-preview">
-  <div class="wn">
-    <button class="wn-btn" onclick="chgPrev(-1)">‹</button>
-    <span class="wn-lbl" id="prev-lbl">—</span>
-    <button class="wn-btn" onclick="chgPrev(1)">›</button>
-  </div>
-  <div id="preview-area"><div class="empty">スケジュールがありません</div></div>
-  <p style="font-size:11px;color:var(--text3);text-align:center;margin-top:8px">この画面をスクショして連盟チャットへ共有</p>
-</div>
-
-<!-- ══ 履歴 ══ -->
-<div class="page" id="page-history">
-  <div class="card">
-    <div class="card-title"><span class="icon ip">📋</span>スケジュール履歴</div>
-    <div id="history-list"><div class="empty">履歴がありません</div></div>
-  </div>
-  <div id="history-detail"></div>
-</div>
-
-    <div class="stat"><div class="stat-n" id="sm-pos">0</div><div class="stat-l">現在位置</div></div>
-    <div class="stat"><div class="stat-n" id="sm-left">0</div><div class="stat-l">残り人数</div></div>
-  </div>
-  <div class="card">
-    <div class="card-title"><span class="icon ig">👥</span>連盟員一覧</div>
-    <div class="filter-row" id="rank-filter">
-      <button class="filter-btn active" data-rank="all" onclick="setRankFilter('all')">全員</button>
-      <button class="filter-btn" data-rank="R5" onclick="setRankFilter('R5')">R5</button>
-      <button class="filter-btn" data-rank="R4" onclick="setRankFilter('R4')">R4</button>
-      <button class="filter-btn" data-rank="R3" onclick="setRankFilter('R3')">R3</button>
-      <button class="filter-btn" data-rank="R1" onclick="setRankFilter('R1')">R1</button>
-    </div>
-    <div id="member-list-view"></div>
-  </div>
 </div>
 
 <!-- ══ 管理者 ══ -->
 <div class="page" id="page-admin">
 
-  <!-- 並び替えエディタ -->
+  <!-- メンバー一覧・前回任命日編集 -->
   <div class="card">
-    <div class="card-title"><span class="icon ia">↕️</span>ローテーション順の並び替え</div>
-    <div class="order-info">
-      🕐 <strong>車掌回数・最終任命日</strong>を参照しながら↑↓で順番を調整できます。
-      ▶ マークが次の割り当て開始位置です。
-    </div>
+    <div class="card-title"><span class="icon ig">👥</span>連盟員リスト <span id="admin-member-count" style="font-size:11px;color:var(--text3);font-weight:400;margin-left:4px"></span></div>
     <div class="filter-row" id="admin-rank-filter">
       <button class="filter-btn active" data-rank="all" onclick="setAdminFilter('all')">全員</button>
       <button class="filter-btn" data-rank="R5" onclick="setAdminFilter('R5')">R5</button>
       <button class="filter-btn" data-rank="R4" onclick="setAdminFilter('R4')">R4</button>
       <button class="filter-btn" data-rank="R3" onclick="setAdminFilter('R3')">R3</button>
+      <button class="filter-btn" data-rank="R2" onclick="setAdminFilter('R2')">R2</button>
       <button class="filter-btn" data-rank="R1" onclick="setAdminFilter('R1')">R1</button>
     </div>
-    <div class="order-list" id="order-list"></div>
+    <div id="admin-member-list"></div>
   </div>
 
-  <!-- 1名追加 -->
+  <!-- 1名手動追加 -->
   <div class="card">
     <div class="card-title"><span class="icon ig">➕</span>1名手動追加</div>
     <div style="display:flex;gap:8px;align-items:flex-end">
@@ -235,7 +180,6 @@ label:first-child{margin-top:0}
       <button class="btn btn-primary btn-sm" onclick="addOne()" style="margin-bottom:1px">追加</button>
     </div>
   </div>
-
 
   <!-- メモ一括インポート -->
   <div class="card">
@@ -250,25 +194,6 @@ label:first-child{margin-top:0}
       <button class="btn btn-secondary" onclick="document.getElementById('memo-input').value=''">クリア</button>
     </div>
     <div id="memo-result" style="margin-top:8px;font-size:12px"></div>
-  </div>
-
-  <!-- 過去履歴手動入力 -->
-  <div class="card">
-    <div class="card-title"><span class="icon ia">📖</span>過去履歴の手動入力</div>
-    <p style="font-size:12px;color:var(--text3);margin-bottom:8px">以前手動で割り当てた週を遡って記録（車掌回数・最終任命日に反映されます）</p>
-    <label>週の開始日（月曜日）</label>
-    <input type="date" id="mh-week">
-    <div style="margin-top:10px">
-      <div class="mhr" style="margin-bottom:4px">
-        <div style="font-size:10px;color:var(--text3);text-align:center">曜日</div>
-        <div style="font-size:11px;color:var(--text3);font-weight:600">🚂 車掌</div>
-        <div style="font-size:11px;color:var(--text3);font-weight:600">⭐ VIP</div>
-      </div>
-      <div id="mh-days"></div>
-    </div>
-    <div class="btn-row">
-      <button class="btn btn-primary" onclick="saveMH()">💾 履歴として保存</button>
-    </div>
   </div>
 
 </div>
@@ -355,8 +280,7 @@ function fmtWeek(key){
 // ── init ──
 setThisMonday();
 buildDayRows();
-buildMHDays();
-renderOrderList();
+renderAdminList();
 renderMembersTab();
 renderHistory();
 renderPreview();
@@ -370,7 +294,7 @@ function showPage(n){
   document.getElementById('tab-'+n).classList.add('active');
   if(n==='preview')renderPreview();
   if(n==='history')renderHistory();
-  if(n==='admin'){renderOrderList();}
+  if(n==='admin'){renderAdminList();}
 }
 
 function toast(m){
@@ -385,6 +309,115 @@ function iso(d){return d.toISOString().slice(0,10)}
 function fd(d){return`${d.getMonth()+1}/${d.getDate()}`}
 function today(){return iso(new Date())}
 function setThisMonday(){
+
+// ── admin: member list with last-date editing ──
+let adminRankFilter='all';
+
+function setAdminFilter(r){
+  adminRankFilter=r;
+  document.querySelectorAll('#admin-rank-filter .filter-btn').forEach(b=>b.classList.toggle('active',b.dataset.rank===r));
+  renderAdminList();
+}
+
+function getLastDate(name){
+  // merge conductorHistory + schedules, return latest ISO date string
+  let best='';
+  if(S.conductorHistory&&S.conductorHistory[name]){
+    best=S.conductorHistory[name];
+  }
+  Object.entries(S.schedules).forEach(([weekKey,days])=>{
+    days.forEach((d,i)=>{
+      if(d.conductor===name){
+        const dd=new Date(weekKey+'T00:00:00');dd.setDate(dd.getDate()+i);
+        const ds=iso(dd);
+        if(ds>best)best=ds;
+      }
+    });
+  });
+  return best;
+}
+
+function daysSince(dateStr){
+  if(!dateStr)return null;
+  const diff=new Date()-new Date(dateStr+'T00:00:00');
+  return Math.floor(diff/86400000);
+}
+
+function renderAdminList(){
+  const fil=adminRankFilter==='all'?S.members:S.members.filter(m=>m.rank===adminRankFilter);
+  document.getElementById('admin-member-count').textContent=`(${S.members.length}名)`;
+  const list=document.getElementById('admin-member-list');
+  if(!fil.length){list.innerHTML='<div class="empty">該当なし</div>';return;}
+
+  list.innerHTML='<div style="display:flex;flex-direction:column;gap:4px;margin-top:4px">'+
+    fil.map(m=>{
+      const last=getLastDate(m.name);
+      const days=daysSince(last);
+      const daysLabel=days===null?'<span style="color:var(--text3)">未設定</span>'
+        :`<span style="color:${days>30?'var(--red)':days>14?'var(--amber)':'var(--green)'}">${days}日前</span>`;
+      const lastLabel=last?last.slice(5).replace('-','/'):'—';
+      return`<div style="background:var(--gray1);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;display:flex;align-items:center;gap:8px">
+        <span style="flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name}</span>
+        <span class="rank rank-${m.rank}">${m.rank}</span>
+        <button onclick="editLastDate('${m.name.replace(/'/g,"\\'")}')"
+          style="font-size:11px;border:1px solid var(--gray3);border-radius:var(--radius-sm);padding:3px 8px;background:#fff;cursor:pointer;color:var(--text2);white-space:nowrap">
+          ${lastLabel} ✏️
+        </button>
+        ${daysLabel}
+        <button onclick="delM('${m.name.replace(/'/g,"\\'")}')" style="background:none;border:none;color:var(--gray4);cursor:pointer;font-size:16px;padding:0 2px">×</button>
+      </div>`;
+    }).join('')+
+  '</div>';
+}
+
+// inline date edit — show a date input row below the tapped member
+let editingName=null;
+function editLastDate(name){
+  if(editingName===name){closeEdit();return;}
+  editingName=name;
+  const last=getLastDate(name);
+  // Append an edit row after re-render
+  renderAdminList();
+  // Insert edit row after the member row
+  const rows=document.querySelectorAll('#admin-member-list [onclick]');
+  // Find by button text containing the name — easier: append a floating edit card
+  const editDiv=document.createElement('div');
+  editDiv.id='edit-date-row';
+  editDiv.style.cssText='background:var(--green-light);border:1px solid var(--green-mid);border-radius:var(--radius-sm);padding:10px 12px;margin-top:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap';
+  editDiv.innerHTML=`
+    <span style="font-size:13px;font-weight:600;flex:1">${name}</span>
+    <input type="date" id="edit-date-inp" value="${last||''}" style="width:150px;font-size:13px">
+    <button class="btn btn-primary btn-sm" onclick="saveLastDate('${name.replace(/'/g,"\\'")}')">保存</button>
+    <button class="btn btn-secondary btn-sm" onclick="closeEdit()">閉じる</button>
+  `;
+  document.getElementById('admin-member-list').appendChild(editDiv);
+  document.getElementById('edit-date-inp').focus();
+}
+
+function saveLastDate(name){
+  const val=document.getElementById('edit-date-inp')?.value;
+  if(!val){toast('日付を選んでください');return;}
+  if(!S.conductorHistory)S.conductorHistory={};
+  // Only update if newer than existing schedule data
+  S.conductorHistory[name]=val;
+  save();
+  editingName=null;
+  renderAdminList();
+  toast(`${name} の前回任命日を更新しました`);
+}
+
+function closeEdit(){
+  editingName=null;
+  const el=document.getElementById('edit-date-row');
+  if(el)el.remove();
+}
+
+function delM(name){
+  if(!confirm(`「${name}」を削除しますか？`))return;
+  S.members=S.members.filter(m=>m.name!==name);
+  if(S.conductorHistory)delete S.conductorHistory[name];
+  save();renderAdminList();updateRotStatus();
+}
 // ── memo import ──
 function zenToHan(s){
   return s.replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0));
@@ -438,6 +471,7 @@ function importMemo(){
   if(notFound.length)html+=`<div style="color:var(--amber);margin-top:4px">⚠ 名前が一致しなかった行：<br>${notFound.join('、')}</div>`;
   res.innerHTML=html;
   if(imported.length)toast(`${imported.length}件インポート完了`);
+  renderAdminList();
 }
 document.getElementById('sched-week-start').value=iso(monOf(today()));buildDayRows();}
 function setNextMonday(){const m=monOf(today());m.setDate(m.getDate()+7);document.getElementById('sched-week-start').value=iso(m);buildDayRows();}
@@ -626,71 +660,15 @@ function delW(key){
 // ── members tab ──
 
 // ── admin: order editor ──
-function setAdminFilter(r){
-  adminRankFilter=r;
-  document.querySelectorAll('#admin-rank-filter .filter-btn').forEach(b=>b.classList.toggle('active',b.dataset.rank===r));
-  renderOrderList();
-}
 
-function renderOrderList(){
-  const stats=buildStats();
-  const pos=S.rotPos%Math.max(1,S.members.length);
-  // visible = all members, filtered for display but move ops act on global index
-  const list=document.getElementById('order-list');
-  const filtered=adminRankFilter==='all'
-    ? S.members.map((m,i)=>({m,i}))
-    : S.members.map((m,i)=>({m,i})).filter(({m})=>m.rank===adminRankFilter);
 
-  if(!filtered.length){list.innerHTML='<div class="empty">該当なし</div>';return;}
-
-  list.innerHTML=filtered.map(({m,gi=0},visIdx)=>{
-    const globalIdx=S.members.indexOf(m);
-    const isPast=globalIdx<pos;const isCur=globalIdx===pos;
-    const st=stats[m.name]||{count:0,last:''};
-    const canUp=globalIdx>0;
-    const canDown=globalIdx<S.members.length-1;
-    return`<div class="order-row ${isPast?'is-done':''} ${isCur?'is-current':''}" id="or_${globalIdx}">
-      <span class="order-seq ${isCur?'ptr':''}">${isCur?'▶':(globalIdx+1)}</span>
-      <span class="order-name">${m.name}</span>
-      <span class="rank rank-${m.rank}">${m.rank}</span>
-      <div class="order-stats">
-        <span class="order-cnt">🚂 ${st.count}回</span>
-        <span class="order-last">${fmtWeek(st.last)}</span>
-      </div>
-      <div class="move-btns">
-        <button class="mv" onclick="moveM(${globalIdx},-1)" ${canUp?'':'disabled'} title="上へ">↑</button>
-        <button class="mv" onclick="moveM(${globalIdx},1)" ${canDown?'':'disabled'} title="下へ">↓</button>
-      </div>
-      <button class="del-btn" onclick="delM('${m.name.replace(/'/g,"\\'")}')">×</button>
-    </div>`;
-  }).join('');
-}
-
-function moveM(idx,dir){
-  const newIdx=idx+dir;
-  if(newIdx<0||newIdx>=S.members.length)return;
-  // swap
-  [S.members[idx],S.members[newIdx]]=[S.members[newIdx],S.members[idx]];
-  // adjust rotPos if needed
-  const pos=S.rotPos;
-  if(idx===pos) S.rotPos=newIdx;
-  else if(newIdx===pos) S.rotPos=idx;
-  save();
-  renderOrderList();
-  updateRotStatus();
-  // scroll moved item into view
-  requestAnimationFrame(()=>{
-    const el=document.getElementById('or_'+newIdx);
-    if(el)el.scrollIntoView({block:'nearest',behavior:'smooth'});
-  });
-}
 
 function delM(name){
   if(!confirm(`「${name}」を削除しますか？`))return;
   const idx=S.members.findIndex(m=>m.name===name);
   if(idx<S.rotPos&&S.rotPos>0)S.rotPos=Math.max(0,S.rotPos-1);
   S.members=S.members.filter(m=>m.name!==name);
-  save();renderOrderList();renderMembersTab();updateRotStatus();
+  save();renderAdminList();updateRotStatus();
 }
 
 
@@ -701,38 +679,10 @@ function addOne(){
   if(S.members.find(m=>m.name===name)){toast('既に登録済みです');return;}
   S.members.push({name,rank});save();
   document.getElementById('add-name').value='';
-  renderOrderList();renderMembersTab();updateRotStatus();
+  renderAdminList();updateRotStatus();
   toast(`${name} を追加しました`);
 }
 
-// ── manual history ──
-function buildMHDays(){
-  const c=document.getElementById('mh-days');c.innerHTML='';
-  for(let i=0;i<7;i++){
-    const row=document.createElement('div');row.className='mhr';
-    const lbl=document.createElement('div');lbl.className='day-label '+DCLS[i];lbl.style.fontSize='11px';lbl.textContent=DAYS[i];
-    const ci=document.createElement('input');ci.type='text';ci.id='mhc_'+i;ci.placeholder='車掌名';ci.className='ni';
-    const vi=document.createElement('input');vi.type='text';vi.id='mhv_'+i;vi.placeholder='VIP名';vi.className='ni';
-    ci.addEventListener('input',()=>{if(i<6&&!document.getElementById('mhv_'+(i+1)).value)document.getElementById('mhv_'+(i+1)).value=ci.value;});
-    row.appendChild(lbl);row.appendChild(ci);row.appendChild(vi);c.appendChild(row);
-  }
-}
-function saveMH(){
-  const ws=document.getElementById('mh-week').value;if(!ws)return toast('開始日を入力してください');
-  const mon=monOf(ws);const key=iso(mon);
-  const days=[];let any=false;
-  for(let i=0;i<7;i++){
-    const c=document.getElementById('mhc_'+i)?.value.trim()||'';
-    const v=document.getElementById('mhv_'+i)?.value.trim()||'';
-    const d=new Date(mon);d.setDate(mon.getDate()+i);
-    days.push({day:DAYS[i],date:fd(d),conductor:c,vip:v});if(c||v)any=true;
-  }
-  if(!any)return toast('少なくとも1名入力してください');
-  if(S.schedules[key]&&!confirm('この週のデータが既にあります。上書きしますか？'))return;
-  S.schedules[key]=days;save();
-  toast('履歴として保存しました ✓');renderHistory();renderOrderList();renderMembersTab();
-  for(let i=0;i<7;i++){document.getElementById('mhc_'+i).value='';document.getElementById('mhv_'+i).value='';}
-}
 
 document.getElementById('sched-week-start').addEventListener('change',()=>{
   buildDayRows();
