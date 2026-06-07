@@ -275,7 +275,12 @@ function save() { try { localStorage.setItem(SKEY, JSON.stringify(S)); } catch(e
 
 // ── utils ──
 function monOf(s) { const d = new Date(s+'T00:00:00'); const dw = d.getDay(); d.setDate(d.getDate()+(dw===0?1:1-dw)); return d; }
-function iso(d) { return d.toISOString().slice(0,10); }
+function iso(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${dd}`;
+}
 function fd(d) { return `${d.getMonth()+1}/${d.getDate()}`; }
 function todayISO() { return iso(new Date()); }
 
