@@ -156,6 +156,9 @@ label:first-child{margin-top:0}
 <div class="page" id="page-admin">
   <div class="card">
     <div class="card-title"><span class="icon ig">👥</span>連盟員リスト <span id="admin-member-count" style="font-size:11px;color:var(--text3);font-weight:400;margin-left:4px"></span></div>
+    <div class="btn-row" style="margin-bottom:8px;margin-top:0">
+      <button class="btn btn-secondary btn-sm" onclick="sortMembersByRank()">ランク順に並べ替え（R5→R1）</button>
+    </div>
     <div class="filter-row" id="admin-rank-filter">
       <button class="filter-btn active" data-rank="all" onclick="setAdminFilter('all')">全員</button>
       <button class="filter-btn" data-rank="R5" onclick="setAdminFilter('R5')">R5</button>
@@ -195,6 +198,7 @@ label:first-child{margin-top:0}
 const DAYS = ['月','火','水','木','金','土','日'];
 const DCLS = ['d0','d1','d2','d3','d4','d5','d6'];
 const SKEY = 'bxd_rot_v3';
+const RANK_ORDER = {R5:0, R4:1, R3:2, R2:3, R1:4};
 
 const DEFAULT_MEMBERS = [
   {name:"イツキ ヨウ",rank:"R5"},
@@ -234,7 +238,11 @@ let editingName = null;
 
 function loadS() {
   try { const r = localStorage.getItem(SKEY); if (r) return JSON.parse(r); } catch(e) {}
-  return { members: [...DEFAULT_MEMBERS], rotPos: 0, schedules: {}, previewIdx: 0, conductorHistory: {} };
+  const def = [...DEFAULT_MEMBERS].sort((a,b)=>{
+    const ra=RANK_ORDER[a.rank]??9, rb=RANK_ORDER[b.rank]??9;
+    return ra!==rb ? ra-rb : a.name.localeCompare(b.name,'ja');
+  });
+  return { members: def, rotPos: 0, schedules: {}, previewIdx: 0, conductorHistory: {} };
 }
 function save() { try { localStorage.setItem(SKEY, JSON.stringify(S)); } catch(e) {} }
 
@@ -538,6 +546,18 @@ function saveLastDate(name) {
 function closeEdit() {
   editingName = null;
   const el = document.getElementById('edit-date-row'); if (el) el.remove();
+}
+
+function sortMembersByRank() {
+  S.members.sort((a, b) => {
+    const ra = RANK_ORDER[a.rank] ?? 9;
+    const rb = RANK_ORDER[b.rank] ?? 9;
+    if (ra !== rb) return ra - rb;
+    return a.name.localeCompare(b.name, 'ja');
+  });
+  S.rotPos = 0;
+  save(); renderAdminList(); updateRotStatus();
+  toast('ランク順に並べ替えました');
 }
 
 function delM(name) {
