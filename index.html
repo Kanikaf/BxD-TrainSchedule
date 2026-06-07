@@ -30,10 +30,6 @@ body{font-family:'Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;backgroun
 .ig{background:var(--green-light);color:var(--green-dark)}
 .ip{background:var(--purple-light);color:var(--purple)}
 .ia{background:var(--amber-light);color:var(--amber)}
-.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px}
-.stat{background:#fff;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 8px;text-align:center}
-.stat-n{font-size:20px;font-weight:700;color:var(--text)}
-.stat-l{font-size:10px;color:var(--text3);margin-top:1px}
 input[type=text],input[type=date],textarea,select{
   width:100%;padding:9px 11px;border:1px solid var(--gray3);border-radius:var(--radius-sm);
   font-size:14px;font-family:inherit;background:#fff;color:var(--text);
@@ -50,40 +46,15 @@ label:first-child{margin-top:0}
 .btn-danger{background:var(--red-light);color:var(--red)}
 .btn-sm{padding:5px 10px;font-size:12px}
 .btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-
-/* rank badges */
 .rank{display:inline-block;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700;white-space:nowrap}
 .rank-R5{background:#fff3cd;color:#856404}
 .rank-R4{background:var(--purple-light);color:var(--purple)}
 .rank-R3{background:var(--green-light);color:var(--green-dark)}
 .rank-R2{background:#fdecea;color:#a32d2d}
 .rank-R1{background:var(--gray2);color:var(--gray4)}
-
-
-
-
-
-.order-row.is-done{opacity:.45}
-.order-row.is-current{border-color:var(--green);background:var(--green-light)}
-
-
-
-/* stats mini */
-
-
-
-/* move buttons */
-
-
-.mv:active{background:var(--gray2);transform:scale(.93)}
-.mv:disabled{opacity:.25;cursor:default}
-
-/* filter row */
 .filter-row{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
 .filter-btn{padding:4px 10px;border:1px solid var(--gray3);border-radius:20px;background:#fff;font-size:12px;cursor:pointer;font-family:inherit;color:var(--text2)}
 .filter-btn.active{border-color:var(--green);color:var(--green);background:var(--green-light);font-weight:600}
-
-/* day rows */
 .day-row{display:grid;grid-template-columns:52px minmax(0,1fr) minmax(0,1fr);gap:6px;align-items:center;margin-bottom:8px}
 .day-label{font-size:11px;font-weight:700;text-align:center;padding:6px 2px;border-radius:var(--radius-sm);line-height:1.4}
 .d0{background:#e8f4ff;color:#1a5fa8}
@@ -99,8 +70,6 @@ label:first-child{margin-top:0}
 .di{padding:7px 10px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--gray2);display:flex;align-items:center;gap:6px}
 .di:last-child{border-bottom:none}
 .di:hover{background:var(--green-light)}
-
-/* preview */
 .prev-wrap{background:#fff;border-radius:var(--radius);border:1px solid var(--border);overflow:hidden;margin-bottom:12px}
 .prev-head{background:var(--green-dark);color:#fff;padding:12px 16px}
 .prev-head h2{font-size:15px;font-weight:700}
@@ -114,26 +83,21 @@ label:first-child{margin-top:0}
 .pt .vc{color:var(--purple);font-weight:600}
 .pt .ec{color:var(--text3);font-style:italic}
 .prev-foot{padding:6px 12px;font-size:10px;color:var(--text3);text-align:right;border-top:1px solid var(--gray2)}
-
-/* history */
 .hi{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--gray2)}
 .hi:last-child{border-bottom:none}
 .hw{font-size:13px;font-weight:600}
 .hs{font-size:11px;color:var(--text3);margin-top:1px}
-
-/* misc */
 .rot-ind{background:var(--green-light);border:1px solid var(--green-mid);border-radius:var(--radius-sm);padding:8px 12px;font-size:12px;color:var(--green-dark);margin-bottom:10px;display:flex;align-items:center;gap:8px}
 .wn{display:flex;align-items:center;gap:8px;margin-bottom:14px}
 .wn-btn{background:var(--gray2);border:none;border-radius:var(--radius-sm);width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text)}
 .wn-lbl{flex:1;text-align:center;font-size:14px;font-weight:600}
-.mhr{display:grid;grid-template-columns:52px minmax(0,1fr) minmax(0,1fr);gap:6px;margin-bottom:6px;align-items:center}
 #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--text);color:#fff;border-radius:20px;padding:9px 20px;font-size:13px;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;z-index:999;white-space:nowrap}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .empty{text-align:center;padding:28px 16px;color:var(--text3);font-size:13px;border:1px dashed var(--gray3);border-radius:var(--radius)}
-.del-btn{background:none;border:none;color:var(--gray4);cursor:pointer;font-size:16px;line-height:1;padding:0 2px;flex-shrink:0}
 </style>
 </head>
 <body>
+
 <div class="topbar">
   <h1>🚂 BxD ローテーション管理</h1>
   <p>Zone 720 — Last War</p>
@@ -146,16 +110,50 @@ label:first-child{margin-top:0}
 </div>
 <div id="toast"></div>
 
-<!-- ══ スケジュール ══ -->
+<!-- スケジュール -->
 <div class="page active" id="page-schedule">
   <div class="card">
     <div class="card-title"><span class="icon ig">📅</span>週の設定</div>
+    <label>週の開始日（月曜日）</label>
+    <input type="date" id="sched-week-start">
+    <div class="btn-row">
+      <button class="btn btn-secondary btn-sm" onclick="setThisMonday()">今週</button>
+      <button class="btn btn-secondary btn-sm" onclick="setNextMonday()">来週</button>
+      <button class="btn btn-primary btn-sm" onclick="autoFill()">🔄 自動入力</button>
+    </div>
+  </div>
+  <div id="rot-status"></div>
+  <div class="card">
+    <div class="card-title"><span class="icon ig">✍️</span>各日の担当 <span style="font-size:11px;color:var(--text3);font-weight:400;margin-left:4px">名前検索で上書き可</span></div>
+    <div id="days-container"></div>
+  </div>
+  <div class="card">
+    <button class="btn btn-primary" onclick="saveSchedule()" style="width:100%">💾 保存して案内表示へ</button>
+  </div>
 </div>
 
-<!-- ══ 管理者 ══ -->
-<div class="page" id="page-admin">
+<!-- 案内表示 -->
+<div class="page" id="page-preview">
+  <div class="wn">
+    <button class="wn-btn" onclick="chgPrev(-1)">‹</button>
+    <span class="wn-lbl" id="prev-lbl">—</span>
+    <button class="wn-btn" onclick="chgPrev(1)">›</button>
+  </div>
+  <div id="preview-area"><div class="empty">スケジュールがありません</div></div>
+  <p style="font-size:11px;color:var(--text3);text-align:center;margin-top:8px">この画面をスクショして連盟チャットへ共有</p>
+</div>
 
-  <!-- メンバー一覧・前回任命日編集 -->
+<!-- 履歴 -->
+<div class="page" id="page-history">
+  <div class="card">
+    <div class="card-title"><span class="icon ip">📋</span>スケジュール履歴</div>
+    <div id="history-list"><div class="empty">履歴がありません</div></div>
+  </div>
+  <div id="history-detail"></div>
+</div>
+
+<!-- 管理者 -->
+<div class="page" id="page-admin">
   <div class="card">
     <div class="card-title"><span class="icon ig">👥</span>連盟員リスト <span id="admin-member-count" style="font-size:11px;color:var(--text3);font-weight:400;margin-left:4px"></span></div>
     <div class="filter-row" id="admin-rank-filter">
@@ -168,8 +166,6 @@ label:first-child{margin-top:0}
     </div>
     <div id="admin-member-list"></div>
   </div>
-
-  <!-- 1名手動追加 -->
   <div class="card">
     <div class="card-title"><span class="icon ig">➕</span>1名手動追加</div>
     <div style="display:flex;gap:8px;align-items:flex-end">
@@ -180,8 +176,6 @@ label:first-child{margin-top:0}
       <button class="btn btn-primary btn-sm" onclick="addOne()" style="margin-bottom:1px">追加</button>
     </div>
   </div>
-
-  <!-- メモ一括インポート -->
   <div class="card">
     <div class="card-title"><span class="icon ip">📋</span>車掌メモから一括インポート</div>
     <p style="font-size:12px;color:var(--text3);margin-bottom:8px">毎月のメモをそのまま貼り付けてください。複数月まとめてもOKです。</p>
@@ -195,15 +189,14 @@ label:first-child{margin-top:0}
     </div>
     <div id="memo-result" style="margin-top:8px;font-size:12px"></div>
   </div>
-
 </div>
 
 <script>
-const DAYS=['月','火','水','木','金','土','日'];
-const DCLS=['d0','d1','d2','d3','d4','d5','d6'];
-const SKEY='bxd_rot_v3';
+const DAYS = ['月','火','水','木','金','土','日'];
+const DCLS = ['d0','d1','d2','d3','d4','d5','d6'];
+const SKEY = 'bxd_rot_v3';
 
-const DEFAULT_MEMBERS=[
+const DEFAULT_MEMBERS = [
   {name:"イツキ ヨウ",rank:"R5"},
   {name:"chokurin",rank:"R4"},{name:"Chokurin",rank:"R4"},{name:"あちょりん",rank:"R4"},
   {name:"カニカフ",rank:"R4"},{name:"ネコマ",rank:"R4"},{name:"ネ申",rank:"R4"},
@@ -235,363 +228,179 @@ const DEFAULT_MEMBERS=[
   {name:"モブさーん",rank:"R3"},{name:"さやちんまる",rank:"R3"}
 ];
 
-let S=loadS();
-let adminRankFilter='all';
+let S = loadS();
+let adminRankFilter = 'all';
+let editingName = null;
 
-function loadS(){
-  try{const r=localStorage.getItem(SKEY);if(r)return JSON.parse(r);}catch(e){}
-  return{members:[...DEFAULT_MEMBERS],rotPos:0,schedules:{},previewIdx:0};
+function loadS() {
+  try { const r = localStorage.getItem(SKEY); if (r) return JSON.parse(r); } catch(e) {}
+  return { members: [...DEFAULT_MEMBERS], rotPos: 0, schedules: {}, previewIdx: 0, conductorHistory: {} };
 }
-function save(){try{localStorage.setItem(SKEY,JSON.stringify(S));}catch(e){}}
+function save() { try { localStorage.setItem(SKEY, JSON.stringify(S)); } catch(e) {} }
 
-// ── computed: conductor stats from schedules ──
-function buildStats(){
-  const stats={};
-  // Seed from memo import history
-  if(S.conductorHistory){
-    Object.entries(S.conductorHistory).forEach(([name,dateStr])=>{
-      if(!stats[name])stats[name]={count:0,last:''};
-      if(dateStr>stats[name].last)stats[name].last=dateStr;
-    });
-  }
-  // From saved schedules (count + most recent date)
-  Object.entries(S.schedules).forEach(([weekKey,days])=>{
-    days.forEach((d,i)=>{
-      if(d.conductor){
-        if(!stats[d.conductor])stats[d.conductor]={count:0,last:''};
-        stats[d.conductor].count++;
-        const dd=new Date(weekKey+'T00:00:00');dd.setDate(dd.getDate()+i);
-        const ds=iso(dd);
-        if(!stats[d.conductor].last||ds>stats[d.conductor].last)
-          stats[d.conductor].last=ds;
-      }
-    });
-  });
-  return stats;
+// ── utils ──
+function monOf(s) { const d = new Date(s+'T00:00:00'); const dw = d.getDay(); d.setDate(d.getDate()+(dw===0?-6:1-dw)); return d; }
+function iso(d) { return d.toISOString().slice(0,10); }
+function fd(d) { return `${d.getMonth()+1}/${d.getDate()}`; }
+function todayISO() { return iso(new Date()); }
+
+function toast(m) {
+  const el = document.getElementById('toast');
+  el.textContent = m; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2500);
 }
 
-// pretty-print week key as M/D
-function fmtWeek(key){
-  if(!key)return '—';
-  const d=new Date(key+'T00:00:00');
-  return `${d.getMonth()+1}/${d.getDate()}`;
-}
-
-// ── init runs at end of script ──
-
-// ── page nav ──
-function showPage(n){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.tabbar button').forEach(b=>b.classList.remove('active'));
+function showPage(n) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tabbar button').forEach(b => b.classList.remove('active'));
   document.getElementById('page-'+n).classList.add('active');
   document.getElementById('tab-'+n).classList.add('active');
-  if(n==='preview')renderPreview();
-  if(n==='history')renderHistory();
-  if(n==='admin'){renderAdminList();}
+  if (n === 'preview') renderPreview();
+  if (n === 'history') renderHistory();
+  if (n === 'admin') renderAdminList();
 }
 
-function toast(m){
-  const el=document.getElementById('toast');
-  el.textContent=m;el.classList.add('show');
-  setTimeout(()=>el.classList.remove('show'),2500);
+// ── schedule ──
+function setThisMonday() {
+  document.getElementById('sched-week-start').value = iso(monOf(todayISO()));
+  buildDayRows();
+}
+function setNextMonday() {
+  const m = monOf(todayISO()); m.setDate(m.getDate()+7);
+  document.getElementById('sched-week-start').value = iso(m);
+  buildDayRows();
 }
 
-// ── date utils ──
-function monOf(s){const d=new Date(s+'T00:00:00');const dw=d.getDay();d.setDate(d.getDate()+(dw===0?-6:1-dw));return d;}
-function iso(d){return d.toISOString().slice(0,10)}
-function fd(d){return`${d.getMonth()+1}/${d.getDate()}`}
-function today(){return iso(new Date())}
-function setThisMonday(){
-
-// ── admin: member list with last-date editing ──
-let adminRankFilter='all';
-
-function setAdminFilter(r){
-  adminRankFilter=r;
-  document.querySelectorAll('#admin-rank-filter .filter-btn').forEach(b=>b.classList.toggle('active',b.dataset.rank===r));
-  renderAdminList();
-}
-
-function getLastDate(name){
-  // merge conductorHistory + schedules, return latest ISO date string
-  let best='';
-  if(S.conductorHistory&&S.conductorHistory[name]){
-    best=S.conductorHistory[name];
-  }
-  Object.entries(S.schedules).forEach(([weekKey,days])=>{
-    days.forEach((d,i)=>{
-      if(d.conductor===name){
-        const dd=new Date(weekKey+'T00:00:00');dd.setDate(dd.getDate()+i);
-        const ds=iso(dd);
-        if(ds>best)best=ds;
-      }
-    });
-  });
-  return best;
-}
-
-function daysSince(dateStr){
-  if(!dateStr)return null;
-  const diff=new Date()-new Date(dateStr+'T00:00:00');
-  return Math.floor(diff/86400000);
-}
-
-function renderAdminList(){
-  const fil=adminRankFilter==='all'?S.members:S.members.filter(m=>m.rank===adminRankFilter);
-  document.getElementById('admin-member-count').textContent=`(${S.members.length}名)`;
-  const list=document.getElementById('admin-member-list');
-  if(!fil.length){list.innerHTML='<div class="empty">該当なし</div>';return;}
-
-  list.innerHTML='<div style="display:flex;flex-direction:column;gap:4px;margin-top:4px">'+
-    fil.map(m=>{
-      const last=getLastDate(m.name);
-      const days=daysSince(last);
-      const daysLabel=days===null?'<span style="color:var(--text3)">未設定</span>'
-        :`<span style="color:${days>30?'var(--red)':days>14?'var(--amber)':'var(--green)'}">${days}日前</span>`;
-      const lastLabel=last?last.slice(5).replace('-','/'):'—';
-      return`<div style="background:var(--gray1);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;display:flex;align-items:center;gap:8px">
-        <span style="flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name}</span>
-        <span class="rank rank-${m.rank}">${m.rank}</span>
-        <button onclick="editLastDate('${m.name.replace(/'/g,"\\'")}')"
-          style="font-size:11px;border:1px solid var(--gray3);border-radius:var(--radius-sm);padding:3px 8px;background:#fff;cursor:pointer;color:var(--text2);white-space:nowrap">
-          ${lastLabel} ✏️
-        </button>
-        ${daysLabel}
-        <button onclick="delM('${m.name.replace(/'/g,"\\'")}')" style="background:none;border:none;color:var(--gray4);cursor:pointer;font-size:16px;padding:0 2px">×</button>
-      </div>`;
-    }).join('')+
-  '</div>';
-}
-
-// inline date edit — show a date input row below the tapped member
-let editingName=null;
-function editLastDate(name){
-  if(editingName===name){closeEdit();return;}
-  editingName=name;
-  const last=getLastDate(name);
-  // Append an edit row after re-render
-  renderAdminList();
-  // Insert edit row after the member row
-  const rows=document.querySelectorAll('#admin-member-list [onclick]');
-  // Find by button text containing the name — easier: append a floating edit card
-  const editDiv=document.createElement('div');
-  editDiv.id='edit-date-row';
-  editDiv.style.cssText='background:var(--green-light);border:1px solid var(--green-mid);border-radius:var(--radius-sm);padding:10px 12px;margin-top:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap';
-  editDiv.innerHTML=`
-    <span style="font-size:13px;font-weight:600;flex:1">${name}</span>
-    <input type="date" id="edit-date-inp" value="${last||''}" style="width:150px;font-size:13px">
-    <button class="btn btn-primary btn-sm" onclick="saveLastDate('${name.replace(/'/g,"\\'")}')">保存</button>
-    <button class="btn btn-secondary btn-sm" onclick="closeEdit()">閉じる</button>
-  `;
-  document.getElementById('admin-member-list').appendChild(editDiv);
-  document.getElementById('edit-date-inp').focus();
-}
-
-function saveLastDate(name){
-  const val=document.getElementById('edit-date-inp')?.value;
-  if(!val){toast('日付を選んでください');return;}
-  if(!S.conductorHistory)S.conductorHistory={};
-  // Only update if newer than existing schedule data
-  S.conductorHistory[name]=val;
-  save();
-  editingName=null;
-  renderAdminList();
-  toast(`${name} の前回任命日を更新しました`);
-}
-
-function closeEdit(){
-  editingName=null;
-  const el=document.getElementById('edit-date-row');
-  if(el)el.remove();
-}
-
-
-// ── memo import ──
-function zenToHan(s){
-  return s.replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0));
-}
-function importMemo(){
-  const raw=document.getElementById('memo-input').value.trim();
-  if(!raw)return toast('メモを貼り付けてください');
-
-  const lines=raw.split(/[\n\r]+/);
-  let currentMonth=null;
-  const today=new Date();
-  const currentYear=today.getFullYear();
-  const imported=[];
-  const notFound=[];
-
-  lines.forEach(line=>{
-    line=line.trim();if(!line)return;
-    const lh=zenToHan(line);
-    // Month header: 6月度車掌 or ６月度 etc
-    const mh=lh.match(/^(\d+)月/);
-    if(mh&&/[月度車掌]/.test(line)){currentMonth=parseInt(mh[1]);return;}
-    // Day line: 1日　名前
-    const md=lh.match(/^(\d+)日[\s\u3000]+(.+)/);
-    if(md&&currentMonth!==null){
-      const day=parseInt(md[1]);
-      const name=md[2].trim();
-      let year=currentYear;
-      // if this date is in the future, use previous year
-      const d=new Date(year,currentMonth-1,day);
-      if(d>today)year=currentYear-1;
-      const dateStr=`${year}-${String(currentMonth).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-      // find member (fuzzy: exact or contains)
-      const member=S.members.find(m=>m.name===name)
-        ||S.members.find(m=>m.name.includes(name)||name.includes(m.name));
-      if(member){
-        // Store in conductorHistory: {name -> lastDate}
-        if(!S.conductorHistory)S.conductorHistory={};
-        if(!S.conductorHistory[member.name]||dateStr>S.conductorHistory[member.name])
-          S.conductorHistory[member.name]=dateStr;
-        imported.push(`${currentMonth}/${day} ${member.name}`);
-      } else {
-        notFound.push(`${currentMonth}/${day} ${name}`);
-      }
-    }
-  });
-
-  save();
-  const res=document.getElementById('memo-result');
-  let html='';
-  if(imported.length)html+=`<div style="color:var(--green-dark)">✓ ${imported.length}件をインポートしました</div>`;
-  if(notFound.length)html+=`<div style="color:var(--amber);margin-top:4px">⚠ 名前が一致しなかった行：<br>${notFound.join('、')}</div>`;
-  res.innerHTML=html;
-  if(imported.length)toast(`${imported.length}件インポート完了`);
-  renderAdminList();
-}
-document.getElementById('sched-week-start').value=iso(monOf(today()));buildDayRows();}
-function setNextMonday(){const m=monOf(today());m.setDate(m.getDate()+7);document.getElementById('sched-week-start').value=iso(m);buildDayRows();}
-
-// ── auto fill ──
-function peekN(n){
-  const arr=S.members;if(!arr.length)return[];
-  const r=[];let p=S.rotPos%arr.length;
-  for(let i=0;i<n;i++){r.push(arr[p%arr.length]);p++;}
-  return r;
-}
-function advRot(n){if(!S.members.length)return;S.rotPos=(S.rotPos+n)%S.members.length;save();}
-
-function autoFill(){
-  if(!S.members.length){toast('連盟員を登録してください');return;}
-  const ws=document.getElementById('sched-week-start').value;
-  if(!ws){toast('開始日を選んでください');return;}
-
-  // Build last-assigned date per member from schedule history + memo imports
-  const lastDate={};
-  // From memo import history
-  if(S.conductorHistory){
-    Object.entries(S.conductorHistory).forEach(([name,date])=>{
-      lastDate[name]=date;
-    });
-  }
-  // From saved schedules (may override if more recent)
-  Object.entries(S.schedules).forEach(([weekKey,days])=>{
-    days.forEach((d,i)=>{
-      if(d.conductor){
-        const dd=new Date(weekKey+'T00:00:00');dd.setDate(dd.getDate()+i);
-        const ds=iso(dd);
-        if(!lastDate[d.conductor]||ds>lastDate[d.conductor])lastDate[d.conductor]=ds;
-      }
-    });
-  });
-
-  const today=new Date();
-  // Sort members by days-since-last-assignment descending (never assigned = Infinity)
-  const sorted=[...S.members].sort((a,b)=>{
-    const da=lastDate[a.name]?Math.floor((today-new Date(lastDate[a.name]+'T00:00:00'))/86400000):Infinity;
-    const db=lastDate[b.name]?Math.floor((today-new Date(lastDate[b.name]+'T00:00:00'))/86400000):Infinity;
-    return db-da;
-  });
-
-  const conductors=sorted.slice(0,7);
-  for(let i=0;i<7;i++){
-    const c=document.getElementById('c_'+i);const v=document.getElementById('v_'+i);
-    if(c){c.value=conductors[i]?.name||'';c.classList.add('af');}
-    if(v){const vn=i===0?'':(conductors[i-1]?.name||'');v.value=vn;v.classList.toggle('af',!!vn);}
-  }
-  updateRotStatus();toast('自動入力完了 ✓ 間が空いている順に並べました');
-}
-
-function updateRotStatus(){
-  const area=document.getElementById('rot-status');
-  if(!S.members.length){area.innerHTML='';return;}
-  const pos=S.rotPos%S.members.length;
-  const next=S.members[pos];
-  area.innerHTML=`<div class="rot-ind">🔄 <div>次の割り当て：<strong>${next?.name||'—'}</strong>（${pos+1}番目 / 全${S.members.length}名）</div></div>`;
-}
-
-// ── day rows ──
-function buildDayRows(){
-  const ws=document.getElementById('sched-week-start').value;if(!ws)return;
-  const mon=monOf(ws);const container=document.getElementById('days-container');container.innerHTML='';
-  for(let i=0;i<7;i++){
-    const d=new Date(mon);d.setDate(mon.getDate()+i);
-    const row=document.createElement('div');row.className='day-row';
-    const lbl=document.createElement('div');lbl.className='day-label '+DCLS[i];lbl.innerHTML=`${fd(d)}<br>${DAYS[i]}`;
-    row.appendChild(lbl);row.appendChild(makeNW('c_'+i,i,'conductor'));row.appendChild(makeNW('v_'+i,i,'vip'));
+function buildDayRows() {
+  const ws = document.getElementById('sched-week-start').value;
+  if (!ws) return;
+  const mon = monOf(ws);
+  const container = document.getElementById('days-container');
+  container.innerHTML = '';
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(mon); d.setDate(mon.getDate()+i);
+    const row = document.createElement('div'); row.className = 'day-row';
+    const lbl = document.createElement('div'); lbl.className = 'day-label '+DCLS[i];
+    lbl.innerHTML = `${fd(d)}<br>${DAYS[i]}`;
+    row.appendChild(lbl);
+    row.appendChild(makeNW('c_'+i, i, 'conductor'));
+    row.appendChild(makeNW('v_'+i, i, 'vip'));
     container.appendChild(row);
   }
 }
-function makeNW(id,di,role){
-  const wrap=document.createElement('div');wrap.className='name-wrap';
-  const inp=document.createElement('input');inp.type='text';inp.className='ni';inp.id=id;
-  inp.placeholder=role==='conductor'?'🚂 車掌':'⭐ VIP';inp.autocomplete='off';
-  const drop=document.createElement('div');drop.className='dropdown';drop.id=id+'_d';
-  inp.addEventListener('input',()=>{inp.classList.remove('af');openD(id,drop,inp.value,di,role);});
-  inp.addEventListener('focus',()=>openD(id,drop,inp.value,di,role));
-  inp.addEventListener('blur',()=>setTimeout(()=>drop.classList.remove('open'),180));
-  wrap.appendChild(inp);wrap.appendChild(drop);return wrap;
+
+function makeNW(id, di, role) {
+  const wrap = document.createElement('div'); wrap.className = 'name-wrap';
+  const inp = document.createElement('input');
+  inp.type = 'text'; inp.className = 'ni'; inp.id = id;
+  inp.placeholder = role === 'conductor' ? '🚂 車掌' : '⭐ VIP';
+  inp.autocomplete = 'off';
+  const drop = document.createElement('div'); drop.className = 'dropdown'; drop.id = id+'_d';
+  inp.addEventListener('input', () => { inp.classList.remove('af'); openD(id, drop, inp.value, di, role); });
+  inp.addEventListener('focus', () => openD(id, drop, inp.value, di, role));
+  inp.addEventListener('blur', () => setTimeout(() => drop.classList.remove('open'), 180));
+  wrap.appendChild(inp); wrap.appendChild(drop);
+  return wrap;
 }
-function openD(id,drop,q,di,role){
-  const mem=S.members;
-  if(!mem.length){drop.innerHTML='<div class="di" style="color:var(--text3)">連盟員未登録</div>';drop.classList.add('open');return;}
-  const ql=q.trim().toLowerCase();
-  const fil=mem.filter(m=>!ql||m.name.toLowerCase().includes(ql)||m.rank.toLowerCase().includes(ql));
-  drop.innerHTML=fil.slice(0,20).map(m=>
+
+function openD(id, drop, q, di, role) {
+  if (!S.members.length) { drop.innerHTML = '<div class="di" style="color:var(--text3)">連盟員未登録</div>'; drop.classList.add('open'); return; }
+  const ql = q.trim().toLowerCase();
+  const fil = S.members.filter(m => !ql || m.name.toLowerCase().includes(ql) || m.rank.toLowerCase().includes(ql));
+  drop.innerHTML = fil.slice(0,20).map(m =>
     `<div class="di" onmousedown="selN('${id}',${di},'${role}','${m.name.replace(/'/g,"\\'")}',event)">
       <span class="rank rank-${m.rank}">${m.rank}</span><span>${m.name}</span>
     </div>`
   ).join('');
-  drop.classList.toggle('open',fil.length>0||!ql);
-}
-function selN(id,di,role,name,ev){
-  ev.preventDefault();
-  const el=document.getElementById(id);el.value=name;el.classList.remove('af');
-  document.getElementById(id+'_d').classList.remove('open');
-  if(role==='conductor'&&di<6){const nv=document.getElementById('v_'+(di+1));if(nv&&!nv.value){nv.value=name;nv.classList.remove('af');}}
+  drop.classList.toggle('open', fil.length > 0 || !ql);
 }
 
-// ── save schedule ──
-function saveSchedule(){
-  const ws=document.getElementById('sched-week-start').value;if(!ws)return toast('開始日を選んでください');
-  const mon=monOf(ws);const key=iso(mon);
-  const days=[];let any=false;
-  for(let i=0;i<7;i++){
-    const c=document.getElementById('c_'+i)?.value.trim()||'';
-    const v=document.getElementById('v_'+i)?.value.trim()||'';
-    const d=new Date(mon);d.setDate(mon.getDate()+i);
-    days.push({day:DAYS[i],date:fd(d),conductor:c,vip:v});
-    if(c||v)any=true;
+function selN(id, di, role, name, ev) {
+  ev.preventDefault();
+  const el = document.getElementById(id); el.value = name; el.classList.remove('af');
+  document.getElementById(id+'_d').classList.remove('open');
+  if (role === 'conductor' && di < 6) {
+    const nv = document.getElementById('v_'+(di+1));
+    if (nv && !nv.value) { nv.value = name; nv.classList.remove('af'); }
   }
-  if(!any)return toast('少なくとも1名入力してください');
-  S.schedules[key]=days;
-  const keys=Object.keys(S.schedules).sort();S.previewIdx=keys.indexOf(key);
-  save();updateRotStatus();toast('保存しました ✓');
-  setTimeout(()=>showPage('preview'),400);
+}
+
+function autoFill() {
+  if (!S.members.length) { toast('連盟員を登録してください'); return; }
+  const ws = document.getElementById('sched-week-start').value;
+  if (!ws) { toast('開始日を選んでください'); return; }
+  const lastDate = {};
+  if (S.conductorHistory) Object.entries(S.conductorHistory).forEach(([n,d]) => lastDate[n] = d);
+  Object.entries(S.schedules).forEach(([wk, days]) => {
+    days.forEach((d, i) => {
+      if (d.conductor) {
+        const dd = new Date(wk+'T00:00:00'); dd.setDate(dd.getDate()+i);
+        const ds = iso(dd);
+        if (!lastDate[d.conductor] || ds > lastDate[d.conductor]) lastDate[d.conductor] = ds;
+      }
+    });
+  });
+  const now = new Date();
+  const sorted = [...S.members].sort((a, b) => {
+    const da = lastDate[a.name] ? Math.floor((now - new Date(lastDate[a.name]+'T00:00:00'))/86400000) : Infinity;
+    const db = lastDate[b.name] ? Math.floor((now - new Date(lastDate[b.name]+'T00:00:00'))/86400000) : Infinity;
+    return db - da;
+  });
+  for (let i = 0; i < 7; i++) {
+    const c = document.getElementById('c_'+i); const v = document.getElementById('v_'+i);
+    if (c) { c.value = sorted[i]?.name||''; c.classList.add('af'); }
+    if (v) { const vn = i===0 ? '' : (sorted[i-1]?.name||''); v.value = vn; v.classList.toggle('af', !!vn); }
+  }
+  updateRotStatus();
+  toast('自動入力完了 ✓ 間が空いている順に並べました');
+}
+
+function updateRotStatus() {
+  const area = document.getElementById('rot-status');
+  if (!area || !S.members.length) { if(area) area.innerHTML=''; return; }
+  const pos = S.rotPos % S.members.length;
+  area.innerHTML = `<div class="rot-ind">🔄 <div>次の割り当て候補：<strong>${S.members[pos]?.name||'—'}</strong>（${pos+1}番目 / 全${S.members.length}名）</div></div>`;
+}
+
+function loadExistingSchedule() {
+  const ws = document.getElementById('sched-week-start').value; if (!ws) return;
+  const key = iso(monOf(ws));
+  const existing = S.schedules[key]; if (!existing) return;
+  existing.forEach((d, i) => {
+    const c = document.getElementById('c_'+i); const v = document.getElementById('v_'+i);
+    if (c && d.conductor) { c.value = d.conductor; c.classList.remove('af'); }
+    if (v && d.vip) { v.value = d.vip; v.classList.remove('af'); }
+  });
+}
+
+function saveSchedule() {
+  const ws = document.getElementById('sched-week-start').value; if (!ws) return toast('開始日を選んでください');
+  const mon = monOf(ws); const key = iso(mon);
+  const days = []; let any = false;
+  for (let i = 0; i < 7; i++) {
+    const c = document.getElementById('c_'+i)?.value.trim()||'';
+    const v = document.getElementById('v_'+i)?.value.trim()||'';
+    const d = new Date(mon); d.setDate(mon.getDate()+i);
+    days.push({ day: DAYS[i], date: fd(d), conductor: c, vip: v });
+    if (c || v) any = true;
+  }
+  if (!any) return toast('少なくとも1名入力してください');
+  S.schedules[key] = days;
+  S.previewIdx = Object.keys(S.schedules).sort().indexOf(key);
+  save(); updateRotStatus(); toast('保存しました ✓');
+  setTimeout(() => showPage('preview'), 400);
 }
 
 // ── preview ──
-function renderPreview(){
-  const keys=Object.keys(S.schedules).sort();
-  const area=document.getElementById('preview-area');const lbl=document.getElementById('prev-lbl');
-  if(!keys.length){area.innerHTML='<div class="empty">スケジュールがありません</div>';lbl.textContent='—';return;}
-  const idx=Math.max(0,Math.min(keys.length-1,S.previewIdx||0));S.previewIdx=idx;
-  const key=keys[idx];const days=S.schedules[key];
-  const st=new Date(key+'T00:00:00');const en=new Date(key+'T00:00:00');en.setDate(en.getDate()+6);
-  lbl.textContent=`${fd(st)}〜${fd(en)}`;
-  area.innerHTML=`<div class="prev-wrap">
+function renderPreview() {
+  const keys = Object.keys(S.schedules).sort();
+  const area = document.getElementById('preview-area'); const lbl = document.getElementById('prev-lbl');
+  if (!keys.length) { area.innerHTML = '<div class="empty">スケジュールがありません</div>'; lbl.textContent = '—'; return; }
+  const idx = Math.max(0, Math.min(keys.length-1, S.previewIdx||0)); S.previewIdx = idx;
+  const key = keys[idx]; const days = S.schedules[key];
+  const st = new Date(key+'T00:00:00'); const en = new Date(key+'T00:00:00'); en.setDate(en.getDate()+6);
+  lbl.textContent = `${fd(st)}〜${fd(en)}`;
+  area.innerHTML = `<div class="prev-wrap">
     <div class="prev-head"><h2>🚂 BxD 週間スケジュール</h2>
     <p>${st.getMonth()+1}月${st.getDate()}日（月）〜 ${en.getMonth()+1}月${en.getDate()}日（日）</p></div>
     <table class="pt"><thead><tr><th>曜日</th><th>🚂 車掌</th><th>⭐ VIP</th></tr></thead>
@@ -603,20 +412,21 @@ function renderPreview(){
     <div class="prev-foot">BxD / Zone 720 — Last War</div>
   </div>`;
 }
-function chgPrev(d){
-  const keys=Object.keys(S.schedules).sort();if(!keys.length)return;
-  S.previewIdx=Math.max(0,Math.min(keys.length-1,(S.previewIdx||0)+d));save();renderPreview();
+function chgPrev(dir) {
+  const keys = Object.keys(S.schedules).sort(); if (!keys.length) return;
+  S.previewIdx = Math.max(0, Math.min(keys.length-1, (S.previewIdx||0)+dir));
+  save(); renderPreview();
 }
 
 // ── history ──
-function renderHistory(){
-  const keys=Object.keys(S.schedules).sort().reverse();
-  const list=document.getElementById('history-list');
-  if(!keys.length){list.innerHTML='<div class="empty">履歴がありません</div>';return;}
-  list.innerHTML=keys.map(key=>{
-    const en=new Date(key+'T00:00:00');en.setDate(en.getDate()+6);
-    const cnt=S.schedules[key].filter(d=>d.conductor||d.vip).length;
-    return`<div class="hi">
+function renderHistory() {
+  const keys = Object.keys(S.schedules).sort().reverse();
+  const list = document.getElementById('history-list');
+  if (!keys.length) { list.innerHTML = '<div class="empty">履歴がありません</div>'; return; }
+  list.innerHTML = keys.map(key => {
+    const en = new Date(key+'T00:00:00'); en.setDate(en.getDate()+6);
+    const cnt = S.schedules[key].filter(d => d.conductor||d.vip).length;
+    return `<div class="hi">
       <div><div class="hw">${new Date(key+'T00:00:00').getMonth()+1}/${new Date(key+'T00:00:00').getDate()}（月）〜${en.getMonth()+1}/${en.getDate()}（日）</div>
       <div class="hs">${cnt}日間の記録</div></div>
       <div style="display:flex;gap:6px">
@@ -626,9 +436,9 @@ function renderHistory(){
     </div>`;
   }).join('');
 }
-function showHD(key){
-  const days=S.schedules[key];const en=new Date(key+'T00:00:00');en.setDate(en.getDate()+6);
-  document.getElementById('history-detail').innerHTML=`<div class="prev-wrap">
+function showHD(key) {
+  const days = S.schedules[key]; const en = new Date(key+'T00:00:00'); en.setDate(en.getDate()+6);
+  document.getElementById('history-detail').innerHTML = `<div class="prev-wrap">
     <div class="prev-head"><h2>🚂 BxD 週間スケジュール</h2>
     <p>${new Date(key+'T00:00:00').getMonth()+1}月${new Date(key+'T00:00:00').getDate()}日（月）〜 ${en.getMonth()+1}月${en.getDate()}日（日）</p></div>
     <table class="pt"><thead><tr><th>曜日</th><th>🚂 車掌</th><th>⭐ VIP</th></tr></thead>
@@ -639,66 +449,169 @@ function showHD(key){
     </tr>`).join('')}</tbody></table>
   </div>`;
 }
-function delW(key){
-  if(!confirm('このスケジュールを削除しますか？'))return;
-  delete S.schedules[key];save();
-  document.getElementById('history-detail').innerHTML='';renderHistory();toast('削除しました');
+function delW(key) {
+  if (!confirm('このスケジュールを削除しますか？')) return;
+  delete S.schedules[key]; save();
+  document.getElementById('history-detail').innerHTML = '';
+  renderHistory(); toast('削除しました');
 }
 
-// ── members tab ──
-
-// ── admin: order editor ──
-
-
-
-function delM(name){
-  if(!confirm(`「${name}」を削除しますか？`))return;
-  const idx=S.members.findIndex(m=>m.name===name);
-  if(idx<S.rotPos&&S.rotPos>0)S.rotPos=Math.max(0,S.rotPos-1);
-  S.members=S.members.filter(m=>m.name!==name);
-  if(S.conductorHistory)delete S.conductorHistory[name];
-  save();renderAdminList();updateRotStatus();
+// ── admin ──
+function setAdminFilter(r) {
+  adminRankFilter = r;
+  document.querySelectorAll('#admin-rank-filter .filter-btn').forEach(b => b.classList.toggle('active', b.dataset.rank===r));
+  renderAdminList();
 }
 
+function getLastDate(name) {
+  let best = '';
+  if (S.conductorHistory && S.conductorHistory[name]) best = S.conductorHistory[name];
+  Object.entries(S.schedules).forEach(([wk, days]) => {
+    days.forEach((d, i) => {
+      if (d.conductor === name) {
+        const dd = new Date(wk+'T00:00:00'); dd.setDate(dd.getDate()+i);
+        const ds = iso(dd); if (ds > best) best = ds;
+      }
+    });
+  });
+  return best;
+}
 
-function addOne(){
-  const name=document.getElementById('add-name').value.trim();
-  const rank=document.getElementById('add-rank').value;
-  if(!name)return;
-  if(S.members.find(m=>m.name===name)){toast('既に登録済みです');return;}
-  S.members.push({name,rank});save();
-  document.getElementById('add-name').value='';
-  renderAdminList();updateRotStatus();
+function daysSince(dateStr) {
+  if (!dateStr) return null;
+  return Math.floor((new Date() - new Date(dateStr+'T00:00:00')) / 86400000);
+}
+
+function renderAdminList() {
+  const fil = adminRankFilter==='all' ? S.members : S.members.filter(m => m.rank===adminRankFilter);
+  document.getElementById('admin-member-count').textContent = `(${S.members.length}名)`;
+  const list = document.getElementById('admin-member-list');
+  if (!fil.length) { list.innerHTML = '<div class="empty">該当なし</div>'; return; }
+  list.innerHTML = '<div style="display:flex;flex-direction:column;gap:4px;margin-top:4px">' +
+    fil.map(m => {
+      const last = getLastDate(m.name);
+      const days = daysSince(last);
+      const daysLabel = days===null
+        ? `<span style="color:var(--text3)">未設定</span>`
+        : `<span style="color:${days>30?'var(--red)':days>14?'var(--amber)':'var(--green)'}">${days}日前</span>`;
+      const lastLabel = last ? last.slice(5).replace('-','/') : '—';
+      return `<div style="background:var(--gray1);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;display:flex;align-items:center;gap:8px">
+        <span style="flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name}</span>
+        <span class="rank rank-${m.rank}">${m.rank}</span>
+        <button onclick="editLastDate('${m.name.replace(/'/g,"\\'")}')"
+          style="font-size:11px;border:1px solid var(--gray3);border-radius:var(--radius-sm);padding:3px 8px;background:#fff;cursor:pointer;color:var(--text2);white-space:nowrap">
+          ${lastLabel} ✏️
+        </button>
+        ${daysLabel}
+        <button onclick="delM('${m.name.replace(/'/g,"\\'")}')" style="background:none;border:none;color:var(--gray4);cursor:pointer;font-size:16px;padding:0 2px">×</button>
+      </div>`;
+    }).join('') + '</div>';
+}
+
+function editLastDate(name) {
+  if (editingName === name) { closeEdit(); return; }
+  editingName = name;
+  renderAdminList();
+  const last = getLastDate(name);
+  const editDiv = document.createElement('div');
+  editDiv.id = 'edit-date-row';
+  editDiv.style.cssText = 'background:var(--green-light);border:1px solid var(--green-mid);border-radius:var(--radius-sm);padding:10px 12px;margin-top:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap';
+  editDiv.innerHTML = `
+    <span style="font-size:13px;font-weight:600;flex:1">${name}</span>
+    <input type="date" id="edit-date-inp" value="${last||''}" style="width:150px;font-size:13px">
+    <button class="btn btn-primary btn-sm" onclick="saveLastDate('${name.replace(/'/g,"\\'")}')">保存</button>
+    <button class="btn btn-secondary btn-sm" onclick="closeEdit()">閉じる</button>
+  `;
+  document.getElementById('admin-member-list').appendChild(editDiv);
+  document.getElementById('edit-date-inp').focus();
+}
+
+function saveLastDate(name) {
+  const val = document.getElementById('edit-date-inp')?.value;
+  if (!val) { toast('日付を選んでください'); return; }
+  if (!S.conductorHistory) S.conductorHistory = {};
+  S.conductorHistory[name] = val;
+  save(); editingName = null; renderAdminList();
+  toast(`${name} の前回任命日を更新しました`);
+}
+
+function closeEdit() {
+  editingName = null;
+  const el = document.getElementById('edit-date-row'); if (el) el.remove();
+}
+
+function delM(name) {
+  if (!confirm(`「${name}」を削除しますか？`)) return;
+  const idx = S.members.findIndex(m => m.name===name);
+  if (idx < S.rotPos && S.rotPos > 0) S.rotPos = Math.max(0, S.rotPos-1);
+  S.members = S.members.filter(m => m.name!==name);
+  if (S.conductorHistory) delete S.conductorHistory[name];
+  save(); renderAdminList(); updateRotStatus();
+}
+
+function addOne() {
+  const name = document.getElementById('add-name').value.trim();
+  const rank = document.getElementById('add-rank').value;
+  if (!name) return;
+  if (S.members.find(m => m.name===name)) { toast('既に登録済みです'); return; }
+  S.members.push({ name, rank }); save();
+  document.getElementById('add-name').value = '';
+  renderAdminList(); updateRotStatus();
   toast(`${name} を追加しました`);
 }
 
+function zenToHan(s) { return s.replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0)-0xFEE0)); }
 
-
-function loadExistingSchedule(){
-  const ws=document.getElementById('sched-week-start').value;
-  if(!ws)return;
-  const key=iso(monOf(ws));
-  const existing=S.schedules[key];
-  if(!existing)return;
-  existing.forEach((d,i)=>{
-    const c=document.getElementById('c_'+i);
-    const v=document.getElementById('v_'+i);
-    if(c&&d.conductor){c.value=d.conductor;c.classList.remove('af');}
-    if(v&&d.vip){v.value=d.vip;v.classList.remove('af');}
+function importMemo() {
+  const raw = document.getElementById('memo-input').value.trim();
+  if (!raw) return toast('メモを貼り付けてください');
+  const lines = raw.split(/[\n\r]+/);
+  let currentMonth = null;
+  const now = new Date(); const currentYear = now.getFullYear();
+  const imported = []; const notFound = [];
+  lines.forEach(line => {
+    line = line.trim(); if (!line) return;
+    const lh = zenToHan(line);
+    const mh = lh.match(/^(\d+)月/);
+    if (mh && /[月度車掌]/.test(line)) { currentMonth = parseInt(mh[1]); return; }
+    const md = lh.match(/^(\d+)日[\s\u3000]+(.+)/);
+    if (md && currentMonth !== null) {
+      const day = parseInt(md[1]); const name = md[2].trim();
+      let year = currentYear;
+      const d = new Date(year, currentMonth-1, day);
+      if (d > now) year = currentYear - 1;
+      const dateStr = `${year}-${String(currentMonth).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      const member = S.members.find(m => m.name===name) || S.members.find(m => m.name.includes(name)||name.includes(m.name));
+      if (member) {
+        if (!S.conductorHistory) S.conductorHistory = {};
+        if (!S.conductorHistory[member.name] || dateStr > S.conductorHistory[member.name])
+          S.conductorHistory[member.name] = dateStr;
+        imported.push(`${currentMonth}/${day} ${member.name}`);
+      } else {
+        notFound.push(`${currentMonth}/${day} ${name}`);
+      }
+    }
   });
+  save();
+  let html = '';
+  if (imported.length) html += `<div style="color:var(--green-dark)">✓ ${imported.length}件をインポートしました</div>`;
+  if (notFound.length) html += `<div style="color:var(--amber);margin-top:4px">⚠ 名前が一致しなかった行：<br>${notFound.join('、')}</div>`;
+  document.getElementById('memo-result').innerHTML = html;
+  if (imported.length) { toast(`${imported.length}件インポート完了`); renderAdminList(); }
 }
-// init
-setThisMonday();
-buildDayRows();
-renderAdminList();
-renderHistory();
-renderPreview();
-updateRotStatus();
 
-document.getElementById('sched-week-start').addEventListener('change',()=>{
-  buildDayRows();
+// ── init ──
+document.addEventListener('DOMContentLoaded', function() {
+  setThisMonday();
+  renderAdminList();
+  renderHistory();
+  renderPreview();
   updateRotStatus();
-  loadExistingSchedule();
+  document.getElementById('sched-week-start').addEventListener('change', () => {
+    buildDayRows();
+    updateRotStatus();
+    loadExistingSchedule();
+  });
 });
 </script>
 </body>
