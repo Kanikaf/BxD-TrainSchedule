@@ -379,12 +379,15 @@ function autoFill() {
   if (!ws) { toast('開始日を選んでください'); return; }
   const lastDate = {};
   if (S.conductorHistory) Object.entries(S.conductorHistory).forEach(([n,d]) => lastDate[n] = d);
+  const todayStr2 = todayISO();
   Object.entries(S.schedules).forEach(([wk, days]) => {
     days.forEach((d, i) => {
       if (d.conductor) {
         const dd = new Date(wk+'T00:00:00'); dd.setDate(dd.getDate()+i);
         const ds = iso(dd);
-        if (!lastDate[d.conductor] || ds > lastDate[d.conductor]) lastDate[d.conductor] = ds;
+        // Only count past dates
+        if (ds <= todayStr2 && (!lastDate[d.conductor] || ds > lastDate[d.conductor]))
+          lastDate[d.conductor] = ds;
       }
     });
   });
@@ -526,13 +529,16 @@ function setAdminFilter(r) {
 }
 
 function getLastDate(name) {
+  const todayStr = todayISO();
   let best = '';
   if (S.conductorHistory && S.conductorHistory[name]) best = S.conductorHistory[name];
   Object.entries(S.schedules).forEach(([wk, days]) => {
     days.forEach((d, i) => {
       if (d.conductor === name) {
         const dd = new Date(wk+'T00:00:00'); dd.setDate(dd.getDate()+i);
-        const ds = iso(dd); if (ds > best) best = ds;
+        const ds = iso(dd);
+        // Only count dates that have already passed (today or earlier)
+        if (ds <= todayStr && ds > best) best = ds;
       }
     });
   });
