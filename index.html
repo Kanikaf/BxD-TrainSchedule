@@ -702,9 +702,13 @@ function renderAdminList() {
           style="font-size:10px;border:1px solid ${isExcluded?'var(--red)':'var(--gray3)'};border-radius:var(--radius-sm);padding:2px 6px;background:${isExcluded?'var(--red-light)':'#fff'};cursor:pointer;color:${isExcluded?'var(--red)':'var(--text3)'};white-space:nowrap">
           ${isExcluded?'対象外✓':'対象外'}
         </button>
+        <button onclick="editName('${m.name.replace(/'/g,"\'")}')"
+          style="font-size:11px;border:1px solid var(--gray3);border-radius:var(--radius-sm);padding:3px 8px;background:#fff;cursor:pointer;color:var(--text2);white-space:nowrap">
+          ✏️名前
+        </button>
         <button onclick="editLastDate('${m.name.replace(/'/g,"\'")}')"
           style="font-size:11px;border:1px solid var(--gray3);border-radius:var(--radius-sm);padding:3px 8px;background:#fff;cursor:pointer;color:var(--text2);white-space:nowrap">
-          ${lastLabel} ✏️
+          ${lastLabel} 📅
         </button>
         ${daysLabel}
         <button onclick="delM('${m.name.replace(/'/g,"\'")}')" style="background:none;border:none;color:var(--gray4);cursor:pointer;font-size:16px;padding:0 2px">×</button>
@@ -719,6 +723,35 @@ function toggleExclude(name) {
   save();
   renderAdminList();
   toast(`${name} を${S.excluded&&S.excluded[name]?'対象外':'対象'}にしました`);
+}
+
+function editName(oldName) {
+  const newName = prompt(`名前を変更：`, oldName);
+  if (!newName || newName === oldName) return;
+  if (S.members.find(m => m.name === newName)) { toast('その名前は既に登録済みです'); return; }
+  // Update members list
+  const m = S.members.find(m => m.name === oldName);
+  if (m) m.name = newName;
+  // Update conductorHistory
+  if (S.conductorHistory && S.conductorHistory[oldName] !== undefined) {
+    S.conductorHistory[newName] = S.conductorHistory[oldName];
+    delete S.conductorHistory[oldName];
+  }
+  // Update excluded
+  if (S.excluded && S.excluded[oldName] !== undefined) {
+    S.excluded[newName] = S.excluded[oldName];
+    delete S.excluded[oldName];
+  }
+  // Update schedules
+  Object.values(S.schedules).forEach(days => {
+    days.forEach(d => {
+      if (d.conductor === oldName) d.conductor = newName;
+      if (d.vip === oldName) d.vip = newName;
+    });
+  });
+  save();
+  renderAdminList();
+  toast(`${oldName} → ${newName} に変更しました`);
 }
 
 function editLastDate(name) {
