@@ -686,14 +686,13 @@ function autoFill() {
   if (!ws) { toast('開始日を選んでください'); return; }
   const lastDate = {};
   if (S.conductorHistory) Object.entries(S.conductorHistory).forEach(([n,d]) => lastDate[n] = d);
-  const todayStr2 = todayISO();
+  // Include ALL scheduled conductor dates (past and future) so next week avoids same people
   Object.entries(S.schedules).forEach(([wk, days]) => {
     days.forEach((d, i) => {
       if (d.conductor) {
         const dd = new Date(wk+'T00:00:00'); dd.setDate(dd.getDate()+i);
         const ds = iso(dd);
-        // Only count past dates
-        if (ds <= todayStr2 && (!lastDate[d.conductor] || ds > lastDate[d.conductor]))
+        if (!lastDate[d.conductor] || ds > lastDate[d.conductor])
           lastDate[d.conductor] = ds;
       }
     });
