@@ -281,8 +281,6 @@ async function syncFromGAS() {
     renderHistory();
     renderPreview();
     updateRotStatus();
-    buildDayRows();
-    loadExistingSchedule();
   } catch(e) {
     showSyncStatus('⚠️ 同期失敗（オフライン？）');
   }
