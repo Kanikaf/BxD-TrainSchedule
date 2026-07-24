@@ -732,7 +732,7 @@ function autoFill() {
 
   // Re-sort conductors excluding pre-set VIPs
   const sortedFiltered = [...S.members]
-    .filter(m => !preSetVips.has(m.name))
+    .filter(m => !preSetVips.has(m.name) && (!S.excluded || !S.excluded[m.name]))
     .sort((a, b) => {
       const da = lastDate[a.name] ? Math.floor((new Date() - new Date(lastDate[a.name]+'T00:00:00'))/86400000) : Infinity;
       const db = lastDate[b.name] ? Math.floor((new Date() - new Date(lastDate[b.name]+'T00:00:00'))/86400000) : Infinity;
