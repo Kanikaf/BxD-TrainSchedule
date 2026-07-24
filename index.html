@@ -755,32 +755,30 @@ function autoFill() {
       })[0]?.name || '';
   };
 
-  // Pre-collect already-set VIPs (e.g. Monday VIP set from prev week Sunday conductor)
+  // Clear all fields first for clean recalculation
   for (let i = 0; i < 7; i++) {
-    const vEl = document.getElementById('v_'+i);
-    if (vEl && vEl.value.trim()) assignedVips.add(vEl.value.trim());
+    const c = document.getElementById('c_'+i); const v = document.getElementById('v_'+i);
+    if (c) { c.value = ''; c.classList.remove('af','changed'); }
+    if (v) { v.value = ''; v.classList.remove('af','changed'); }
   }
 
-  // Also exclude pre-set VIPs from conductor selection
-  const preSetVips = new Set([...assignedVips]);
-
-  // Re-sort conductors excluding pre-set VIPs
-  const sortedFiltered = [...S.members]
-    .filter(m => (!S.excluded || !S.excluded[m.name]) && !preSetVips.has(m.name))
-    .sort((a, b) => {
-      const da = lastDate[a.name] ? Math.floor((new Date() - new Date(lastDate[a.name]+'T00:00:00'))/86400000) : Infinity;
-      const db = lastDate[b.name] ? Math.floor((new Date() - new Date(lastDate[b.name]+'T00:00:00'))/86400000) : Infinity;
-      return db - da;
-    });
+  // Monday VIP from prev week Sunday (set before conductor loop)
+  if (prevSunConductor) {
+    const mondayVip = document.getElementById('v_0');
+    if (mondayVip) {
+      mondayVip.value = prevSunConductor;
+      mondayVip.classList.add('af');
+      assignedVips.add(prevSunConductor);
+    }
+  }
 
   for (let i = 0; i < 7; i++) {
     const c = document.getElementById('c_'+i); const v = document.getElementById('v_'+i);
-    if (c) { c.value = sortedFiltered[i]?.name||''; c.classList.add('af'); }
+    if (c) { c.value = sorted[i]?.name||''; c.classList.add('af'); }
     if (v) {
-      // Don't overwrite existing VIP values
-      if (v.value.trim()) continue;
-      const todayConductor = sortedFiltered[i]?.name||'';
-      const prevC = i===0 ? prevSunConductor : (sortedFiltered[i-1]?.name||'');
+      if (i === 0 && v.value.trim()) continue; // Monday VIP already set above
+      const todayConductor = sorted[i]?.name||'';
+      const prevC = i===0 ? prevSunConductor : (sorted[i-1]?.name||'');
       let vipName = '';
 
       if (prevC && vipAvail(prevC, todayConductor)) {
