@@ -744,17 +744,12 @@ function autoFill() {
   const assignedVips = new Set(); // track VIPs already used this week
 
   // VIP availability check: not excluded, not same-day conductor, not already VIP this week
-  // Check VIP recency using lastVipDate (independent from conductor)
   const vipAvail = (name, todayConductor) => {
     if (!name) return false;
     if (S.excluded && S.excluded[name]) return false;
     if (assignedVips.has(name)) return false;
     if (name === todayConductor) return false;
-    // Check VIP recency: must have enough days since last VIP
-    const lastVip = lastVipDate[name];
-    if (!lastVip) return true; // never done VIP = available
-    const daysSince = Math.floor((now2 - new Date(lastVip+'T00:00:00')) / 86400000);
-    return daysSince >= activeCount();
+    return true;
   };
 
   const now2 = new Date();
