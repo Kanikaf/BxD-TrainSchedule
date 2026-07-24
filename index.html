@@ -65,6 +65,9 @@ label:first-child{margin-top:0}
 .ni{width:100%;padding:7px 8px;border:1px solid var(--gray3);border-radius:var(--radius-sm);font-size:12px;font-family:inherit;background:#fff;color:var(--text)}
 .ni:focus{border-color:var(--green);outline:none}
 .ni.af{border-color:var(--green-mid);background:var(--green-light)}
+.ni.changed{border-color:#e8c97a;background:#faeeda}
+.ni.readonly{background:var(--gray2);color:var(--text3);border-color:var(--gray3);pointer-events:none}
+.week-readonly-msg{background:var(--gray2);border-radius:var(--radius-sm);padding:8px 12px;font-size:12px;color:var(--text3);margin-bottom:10px;text-align:center}
 .dropdown{position:absolute;top:calc(100% + 2px);left:0;right:0;background:#fff;border:1px solid var(--gray3);border-radius:var(--radius-sm);max-height:180px;overflow-y:auto;z-index:200;box-shadow:0 4px 12px rgba(0,0,0,.1);display:none}
 .dropdown.open{display:block}
 .di{padding:7px 10px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--gray2);display:flex;align-items:center;gap:6px}
@@ -480,7 +483,7 @@ function makeNW(id, di, role) {
     btnNone.style.cssText = 'font-size:11px;padding:3px 7px;border:0.5px solid #f09595;border-radius:5px;background:#fdecea;cursor:pointer;color:#a32d2d';
     btnNone.onclick = () => {
       const el = document.getElementById(id);
-      if (el) { el.value = ''; el.classList.remove('af'); el.dataset.vipNone = '1'; }
+      if (el) { el.value = ''; el.classList.remove('af'); el.classList.add('changed'); el.dataset.vipNone = '1'; }
     };
 
     btnRow.appendChild(btnPrev);
@@ -549,13 +552,16 @@ function activeCount() {
 }
 
 // Check if person is eligible for VIP
-// Condition: last VIP date is more than activeCount() days ago
-// (conductor history is NOT checked - conductor and VIP are independent cycles)
+// Condition: last VIP date + activeCount() days has passed (from today's perspective)
+// Future scheduled VIPs count against eligibility too
 function vipEligible(name) {
   const lastVipDate = S.vipHistory && S.vipHistory[name] ? S.vipHistory[name] : '';
   if (!lastVipDate) return true; // never done VIP = eligible
-  const days = Math.floor((new Date() - new Date(lastVipDate+'T00:00:00')) / 86400000);
-  return days >= activeCount();
+  // Calculate days from last VIP to today (negative if VIP is in future)
+  const daysSinceVip = Math.floor((new Date() - new Date(lastVipDate+'T00:00:00')) / 86400000);
+  // If VIP is in future (daysSinceVip < 0), days remaining = abs(daysSinceVip) + activeCount()
+  // If VIP is in past, need activeCount() days to pass since that date
+  return daysSinceVip >= activeCount();
 }
 
 // VIP candidate cycling
@@ -640,6 +646,7 @@ function cycleVipCandidate(id, di, dir) {
   if (dir === -1) {
     const orig = vipOriginalValue[id] ?? '';
     el.value = orig;
+    el.classList.remove('changed');
     el.classList.toggle('af', !!orig);
     delete vipCandidateIdx[id];
     return;
@@ -670,7 +677,8 @@ function cycleVipCandidate(id, di, dir) {
   idx = (idx + 1) % candidates.length;
   vipCandidateIdx[id] = idx;
   el.value = candidates[idx];
-  el.classList.add('af');
+  el.classList.remove('af');
+  el.classList.add('changed');
 }
 
 // Reset stored originals when autoFill runs
@@ -817,12 +825,55 @@ function updateRotStatus() {
 
 function loadExistingSchedule() {
   const ws = document.getElementById('sched-week-start').value; if (!ws) return;
-  const key = iso(monOf(ws));
-  const existing = S.schedules[key]; if (!existing) return;
+  const mon = monOf(ws);
+  const key = iso(mon);
+  const existing = S.schedules[key];
+
+  // Past saved week = week ended before today
+  const weekEnd = new Date(mon); weekEnd.setDate(mon.getDate()+6);
+  const isPastSaved = existing && iso(weekEnd) < todayISO();
+
+  // Show/hide controls
+  const autoBtn = document.querySelector('[onclick="autoFill()"]');
+  const clearBtn = document.querySelector('[onclick="clearDayRows()"]');
+  const saveBtn = document.querySelector('[onclick="saveSchedule()"]');
+
+  if (isPastSaved) {
+    if (autoBtn) autoBtn.style.display = 'none';
+    if (clearBtn) clearBtn.style.display = 'none';
+    if (saveBtn) saveBtn.style.display = 'none';
+    let msg = document.getElementById('week-readonly-msg');
+    if (!msg) {
+      msg = document.createElement('div');
+      msg.id = 'week-readonly-msg';
+      msg.className = 'week-readonly-msg';
+      msg.textContent = '📋 この週は保存済みです（閲覧のみ）';
+      const dc = document.getElementById('days-container');
+      if (dc) dc.before(msg);
+    }
+  } else {
+    if (autoBtn) autoBtn.style.display = '';
+    if (clearBtn) clearBtn.style.display = '';
+    if (saveBtn) saveBtn.style.display = '';
+    const msg = document.getElementById('week-readonly-msg');
+    if (msg) msg.remove();
+  }
+
+  if (!existing) return;
   existing.forEach((d, i) => {
     const c = document.getElementById('c_'+i); const v = document.getElementById('v_'+i);
-    if (c && d.conductor) { c.value = d.conductor; c.classList.remove('af'); }
-    if (v && d.vip) { v.value = d.vip; v.classList.remove('af'); }
+    if (c) {
+      if (d.conductor) c.value = d.conductor;
+      c.classList.remove('af');
+      if (isPastSaved) c.classList.add('readonly'); else c.classList.remove('readonly');
+    }
+    if (v) {
+      if (d.vip) v.value = d.vip;
+      v.classList.remove('af');
+      if (isPastSaved) v.classList.add('readonly'); else v.classList.remove('readonly');
+    }
+    const btns = document.getElementById('v_'+i+'_btns');
+    if (btns) btns.style.display = isPastSaved ? 'none' : 'flex';
   });
 }
 
@@ -839,18 +890,15 @@ function saveSchedule() {
   }
   // Allow saving empty schedule (to clear a week)
   S.schedules[key] = days;
-  // Record vipHistory for past dates
-  const todayStr3 = todayISO();
+  // Record vipHistory for all dates (including future scheduled VIPs)
+  // This ensures next week's autoFill knows who recently had VIP
   days.forEach(d => {
-    if (d.vip && d.date) {
-      // Reconstruct full date from week key + day index
+    if (d.vip && d.vip !== '') {
       const dayIdx = DAYS.indexOf(d.day);
       const dd = new Date(key+'T00:00:00'); dd.setDate(dd.getDate()+dayIdx);
       const ds = iso(dd);
-      if (ds <= todayStr3) {
-        if (!S.vipHistory) S.vipHistory = {};
-        if (!S.vipHistory[d.vip] || ds > S.vipHistory[d.vip]) S.vipHistory[d.vip] = ds;
-      }
+      if (!S.vipHistory) S.vipHistory = {};
+      if (!S.vipHistory[d.vip] || ds > S.vipHistory[d.vip]) S.vipHistory[d.vip] = ds;
     }
   });
   S.previewIdx = Object.keys(S.schedules).sort().indexOf(key);
