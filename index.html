@@ -551,17 +551,10 @@ function activeCount() {
   return S.members.filter(m => !S.excluded || !S.excluded[m.name]).length;
 }
 
-// Check if person is eligible for VIP
-// Condition: last VIP date + activeCount() days has passed (from today's perspective)
-// Future scheduled VIPs count against eligibility too
+// VIP eligibility: always true (sorted by elapsed days, no hard cycle cutoff)
+// This allows natural rotation without blocking everyone
 function vipEligible(name) {
-  const lastVipDate = S.vipHistory && S.vipHistory[name] ? S.vipHistory[name] : '';
-  if (!lastVipDate) return true; // never done VIP = eligible
-  // Calculate days from last VIP to today (negative if VIP is in future)
-  const daysSinceVip = Math.floor((new Date() - new Date(lastVipDate+'T00:00:00')) / 86400000);
-  // If VIP is in future (daysSinceVip < 0), days remaining = abs(daysSinceVip) + activeCount()
-  // If VIP is in past, need activeCount() days to pass since that date
-  return daysSinceVip >= activeCount();
+  return true;
 }
 
 // VIP candidate cycling
@@ -706,33 +699,8 @@ function autoFill() {
     });
   });
   const now = new Date();
-  // Build last conductor date from schedules (including future scheduled)
-  const lastConductorDate = {};
-  Object.entries(S.schedules).forEach(([wk, days]) => {
-    days.forEach((d, i) => {
-      if (d.conductor) {
-        const dd = new Date(wk+'T00:00:00'); dd.setDate(dd.getDate()+i);
-        const ds = iso(dd);
-        if (!lastConductorDate[d.conductor] || ds > lastConductorDate[d.conductor])
-          lastConductorDate[d.conductor] = ds;
-      }
-    });
-  });
-  // Also check conductorHistory
-  if (S.conductorHistory) Object.entries(S.conductorHistory).forEach(([n,d]) => {
-    if (!lastConductorDate[n] || d > lastConductorDate[n]) lastConductorDate[n] = d;
-  });
-
-  // Conductor eligible: not excluded, not assigned within activeCount() days
-  const cycle = activeCount();
-  const eligible = S.members.filter(m => {
-    if (S.excluded && S.excluded[m.name]) return false;
-    const last = lastConductorDate[m.name];
-    if (!last) return true;
-    const daysSince = Math.floor((now - new Date(last+'T00:00:00')) / 86400000);
-    return daysSince >= cycle;
-  });
-
+  // Conductor: sort by last assignment elapsed days (longest first), exclude excluded members
+  const eligible = S.members.filter(m => !S.excluded || !S.excluded[m.name]);
   const sorted = [...eligible].sort((a, b) => {
     const da = lastDate[a.name] ? Math.floor((now - new Date(lastDate[a.name]+'T00:00:00'))/86400000) : Infinity;
     const db = lastDate[b.name] ? Math.floor((now - new Date(lastDate[b.name]+'T00:00:00'))/86400000) : Infinity;
@@ -794,14 +762,7 @@ function autoFill() {
 
   // Re-sort conductors excluding pre-set VIPs
   const sortedFiltered = [...S.members]
-    .filter(m => {
-      if (S.excluded && S.excluded[m.name]) return false;
-      if (preSetVips.has(m.name)) return false;
-      const last = lastConductorDate[m.name];
-      if (!last) return true;
-      const daysSince = Math.floor((now - new Date(last+'T00:00:00')) / 86400000);
-      return daysSince >= cycle;
-    })
+    .filter(m => (!S.excluded || !S.excluded[m.name]) && !preSetVips.has(m.name))
     .sort((a, b) => {
       const da = lastDate[a.name] ? Math.floor((new Date() - new Date(lastDate[a.name]+'T00:00:00'))/86400000) : Infinity;
       const db = lastDate[b.name] ? Math.floor((new Date() - new Date(lastDate[b.name]+'T00:00:00'))/86400000) : Infinity;
