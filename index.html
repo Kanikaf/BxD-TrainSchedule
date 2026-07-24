@@ -406,6 +406,7 @@ function autoSaveCurrentWeek(callback) {
 }
 
 function buildDayRows() {
+  resetVipOriginals();
   const ws = document.getElementById('sched-week-start').value;
   if (!ws) return;
   const mon = monOf(ws);
@@ -466,8 +467,8 @@ function makeNW(id, di, role) {
     btnRow.id = id + '_btns';
 
     const btnPrev = document.createElement('button');
-    btnPrev.textContent = '←戻す';
-    btnPrev.title = '前の候補に戻す';
+    btnPrev.textContent = '元に戻す';
+    btnPrev.title = '自動入力の値に戻す';
     btnPrev.style.cssText = 'font-size:12px;padding:3px 7px;border:0.5px solid var(--gray3);border-radius:5px;background:var(--gray1);cursor:pointer;color:var(--text2)';
     btnPrev.onclick = () => cycleVipCandidate(id, di, -1);
 
@@ -629,28 +630,59 @@ function getVipCandidates(di) {
   return sorted;
 }
 
-// Track current candidate index per VIP field
+// Track original (auto-filled) value and current candidate index per VIP field
+const vipOriginalValue = {};
 const vipCandidateIdx = {};
 
 function cycleVipCandidate(id, di, dir) {
   const el = document.getElementById(id);
   if (!el) return;
+
+  // dir === -1 means "元に戻す" → restore original auto-filled value
+  if (dir === -1) {
+    const orig = vipOriginalValue[id] ?? '';
+    el.value = orig;
+    el.classList.toggle('af', !!orig);
+    delete vipCandidateIdx[id];
+    return;
+  }
+
+  // Save original value on first use
+  if (vipOriginalValue[id] === undefined) {
+    vipOriginalValue[id] = el.value;
+  }
   el.dataset.vipNone = '';
 
-  const candidates = getVipCandidates(di);
-  if (!candidates.length) return;
+  // Get candidates excluding already-assigned VIPs in other rows
+  const assignedElsewhere = new Set();
+  for (let j = 0; j < 7; j++) {
+    if (j === di) continue;
+    const vv = document.getElementById('v_'+j)?.value.trim();
+    if (vv) assignedElsewhere.add(vv);
+  }
+
+  const allCandidates = getVipCandidates(di);
+  const candidates = allCandidates.filter(n => !assignedElsewhere.has(n));
+  if (!candidates.length) { el.value = ''; return; }
 
   const current = el.value;
   let idx = vipCandidateIdx[id] ?? candidates.indexOf(current);
-  if (idx < 0) idx = 0;
+  if (idx < 0) idx = -1;
 
-  idx = (idx + dir + candidates.length) % candidates.length;
+  idx = (idx + 1) % candidates.length;
   vipCandidateIdx[id] = idx;
   el.value = candidates[idx];
   el.classList.add('af');
 }
 
+// Reset stored originals when autoFill runs
+function resetVipOriginals() {
+  Object.keys(vipOriginalValue).forEach(k => delete vipOriginalValue[k]);
+  Object.keys(vipCandidateIdx).forEach(k => delete vipCandidateIdx[k]);
+}
+
 function autoFill() {
+  resetVipOriginals();
   if (!S.members.length) { toast('連盟員を登録してください'); return; }
   const ws = document.getElementById('sched-week-start').value;
   if (!ws) { toast('開始日を選んでください'); return; }
