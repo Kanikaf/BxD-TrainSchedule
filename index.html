@@ -220,7 +220,7 @@ const SKEY = 'bxd_rot_v3';
 const RANK_ORDER = {R5:0, R4:1, R3:2, R2:3, R1:4};
 
 // ── GAS Backend URL ── (GASデプロイ後にここを更新)
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwSQ2fBworif_QFa09WZ7JXsy3Ot_dCR5y7HBcr-x60tqXjrPSk24nIMbrIBrR-uKvV/exec';
+const GAS_URL = 'YOUR_GAS_URL_HERE';
 
 const DEFAULT_MEMBERS = [
   {name:"イツキ ヨウ",rank:"R5"},
@@ -273,6 +273,7 @@ async function syncFromGAS() {
     if (data.members)          S.members          = data.members;
     if (data.schedules)        S.schedules        = data.schedules;
     if (data.conductorHistory) S.conductorHistory = data.conductorHistory;
+    if (data.vipHistory)       S.vipHistory       = data.vipHistory;
     if (data.excluded)         S.excluded         = data.excluded;
     localStorage.setItem(SKEY, JSON.stringify(S));
     showSyncStatus('✓ 同期済み');
@@ -300,6 +301,7 @@ async function saveToGAS() {
           members: S.members,
           schedules: S.schedules,
           conductorHistory: S.conductorHistory,
+          vipHistory: S.vipHistory,
           excluded: S.excluded
         }
       })
@@ -321,6 +323,7 @@ function loadS() {
     if (r) {
       const d = JSON.parse(r);
       if (!d.conductorHistory) d.conductorHistory = {};
+      if (!d.vipHistory) d.vipHistory = {};
       if (!d.excluded) d.excluded = {};
       return d;
     }
@@ -329,7 +332,7 @@ function loadS() {
     const ra=RANK_ORDER[a.rank]??9, rb=RANK_ORDER[b.rank]??9;
     return ra!==rb ? ra-rb : a.name.localeCompare(b.name,'ja');
   });
-  return { members: def, rotPos: 0, schedules: {}, previewIdx: 0, conductorHistory: {}, excluded: {} };
+  return { members: def, rotPos: 0, schedules: {}, previewIdx: 0, conductorHistory: {}, vipHistory: {}, excluded: {} };
 }
 function save() { try { localStorage.setItem(SKEY, JSON.stringify(S)); } catch(e) {} saveToGAS(); }
 
@@ -442,6 +445,9 @@ function buildDayRows() {
 }
 
 function makeNW(id, di, role) {
+  const outer = document.createElement('div');
+  outer.style.cssText = 'display:flex;flex-direction:column;gap:3px';
+
   const wrap = document.createElement('div'); wrap.className = 'name-wrap';
   const inp = document.createElement('input');
   inp.type = 'text'; inp.className = 'ni'; inp.id = id;
@@ -452,7 +458,39 @@ function makeNW(id, di, role) {
   inp.addEventListener('focus', () => openD(id, drop, inp.value, di, role));
   inp.addEventListener('blur', () => setTimeout(() => drop.classList.remove('open'), 180));
   wrap.appendChild(inp); wrap.appendChild(drop);
-  return wrap;
+  outer.appendChild(wrap);
+
+  if (role === 'vip') {
+    const btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex;gap:4px';
+    btnRow.id = id + '_btns';
+
+    const btnPrev = document.createElement('button');
+    btnPrev.textContent = '←戻す';
+    btnPrev.title = '前の候補に戻す';
+    btnPrev.style.cssText = 'font-size:12px;padding:3px 7px;border:0.5px solid var(--gray3);border-radius:5px;background:var(--gray1);cursor:pointer;color:var(--text2)';
+    btnPrev.onclick = () => cycleVipCandidate(id, di, -1);
+
+    const btnNext = document.createElement('button');
+    btnNext.textContent = '次の候補 →';
+    btnNext.style.cssText = 'font-size:11px;padding:3px 7px;border:0.5px solid var(--gray3);border-radius:5px;background:var(--gray1);cursor:pointer;color:var(--text2);flex:1';
+    btnNext.onclick = () => cycleVipCandidate(id, di, 1);
+
+    const btnNone = document.createElement('button');
+    btnNone.textContent = 'なし';
+    btnNone.style.cssText = 'font-size:11px;padding:3px 7px;border:0.5px solid #f09595;border-radius:5px;background:#fdecea;cursor:pointer;color:#a32d2d';
+    btnNone.onclick = () => {
+      const el = document.getElementById(id);
+      if (el) { el.value = ''; el.classList.remove('af'); el.dataset.vipNone = '1'; }
+    };
+
+    btnRow.appendChild(btnPrev);
+    btnRow.appendChild(btnNext);
+    btnRow.appendChild(btnNone);
+    outer.appendChild(btnRow);
+  }
+
+  return outer;
 }
 
 function openD(id, drop, q, di, role) {
@@ -483,6 +521,121 @@ function selN(id, di, role, name, ev) {
       // Only update if same week context doesn't apply — handled by buildDayRows
     }
   }
+}
+
+
+
+// Get the most recent date a person was assigned (conductor OR vip)
+function getLastAssigned(name) {
+  const todayStr = todayISO();
+  let best = '';
+  if (S.conductorHistory && S.conductorHistory[name]) best = S.conductorHistory[name];
+  if (S.vipHistory && S.vipHistory[name] && S.vipHistory[name] > best) best = S.vipHistory[name];
+  // Also check schedules (past only)
+  Object.entries(S.schedules).forEach(([wk, days]) => {
+    days.forEach((d, i) => {
+      const dd = new Date(wk+'T00:00:00'); dd.setDate(dd.getDate()+i);
+      const ds = iso(dd);
+      if (ds > todayStr) return;
+      if (d.conductor === name && ds > best) best = ds;
+      if (d.vip === name && ds > best) best = ds;
+    });
+  });
+  return best;
+}
+
+// Get active member count (excluding excluded)
+function activeCount() {
+  return S.members.filter(m => !S.excluded || !S.excluded[m.name]).length;
+}
+
+// Check if person is eligible for VIP (not assigned within rotation cycle)
+function vipEligible(name) {
+  const last = getLastAssigned(name);
+  if (!last) return true; // never assigned = eligible
+  const days = Math.floor((new Date() - new Date(last+'T00:00:00')) / 86400000);
+  return days >= activeCount();
+}
+
+// VIP candidate cycling
+function getVipCandidates(di) {
+  const ws = document.getElementById('sched-week-start').value;
+  const todayStr = todayISO();
+  const now = new Date();
+
+  // Build last VIP date per member
+  const lastVip = {};
+  if (S.vipHistory) Object.entries(S.vipHistory).forEach(([n,d]) => lastVip[n] = d);
+  Object.entries(S.schedules).forEach(([wk, days]) => {
+    days.forEach((d, i) => {
+      if (d.vip && d.vip !== '') {
+        const dd = new Date(wk+'T00:00:00'); dd.setDate(dd.getDate()+i);
+        const ds = iso(dd);
+        if (ds <= todayStr && (!lastVip[d.vip] || ds > lastVip[d.vip])) lastVip[d.vip] = ds;
+      }
+    });
+  });
+
+  // Get this week's conductors to exclude
+  const thisWeekConductors = new Set();
+  if (ws) {
+    const mon = monOf(ws);
+    const key = iso(mon);
+    const thisSched = S.schedules[key];
+    if (thisSched) {
+      thisSched.forEach(d => { if (d.conductor) thisWeekConductors.add(d.conductor); });
+    }
+    // Also read from current input fields
+    for (let i = 0; i < 7; i++) {
+      const c = document.getElementById('c_'+i)?.value.trim();
+      if (c) thisWeekConductors.add(c);
+    }
+  }
+
+  // Priority 1: yesterday's conductor (normal rule)
+  const prevConductor = di > 0 ? document.getElementById('c_'+(di-1))?.value.trim() : '';
+
+  // Eligible: not excluded, not this week's conductor, within rotation cycle
+  const eligible = S.members.filter(m =>
+    (!S.excluded || !S.excluded[m.name]) &&
+    !thisWeekConductors.has(m.name) &&
+    vipEligible(m.name)
+  );
+
+  // Sort by last VIP date elapsed descending (never = Infinity)
+  const sorted = [...eligible].sort((a, b) => {
+    const da = lastVip[a.name] ? Math.floor((now - new Date(lastVip[a.name]+'T00:00:00'))/86400000) : Infinity;
+    const db = lastVip[b.name] ? Math.floor((now - new Date(lastVip[b.name]+'T00:00:00'))/86400000) : Infinity;
+    return db - da;
+  }).map(m => m.name);
+
+  // Put prev conductor first ONLY if eligible (not assigned within cycle)
+  if (prevConductor && vipEligible(prevConductor) && !thisWeekConductors.has(prevConductor)) {
+    const rest = sorted.filter(n => n !== prevConductor);
+    return [prevConductor, ...rest];
+  }
+  return sorted;
+}
+
+// Track current candidate index per VIP field
+const vipCandidateIdx = {};
+
+function cycleVipCandidate(id, di, dir) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.dataset.vipNone = '';
+
+  const candidates = getVipCandidates(di);
+  if (!candidates.length) return;
+
+  const current = el.value;
+  let idx = vipCandidateIdx[id] ?? candidates.indexOf(current);
+  if (idx < 0) idx = 0;
+
+  idx = (idx + dir + candidates.length) % candidates.length;
+  vipCandidateIdx[id] = idx;
+  el.value = candidates[idx];
+  el.classList.add('af');
 }
 
 function autoFill() {
@@ -529,12 +682,33 @@ function autoFill() {
     }
   }
 
+  // Build set of conductors assigned this week
+  const thisWeekC = new Set(sorted.slice(0,7).map(m => m?.name).filter(Boolean));
+
   for (let i = 0; i < 7; i++) {
     const c = document.getElementById('c_'+i); const v = document.getElementById('v_'+i);
     if (c) { c.value = sorted[i]?.name||''; c.classList.add('af'); }
     if (v) {
-      const vn = i===0 ? prevSunConductor : (sorted[i-1]?.name||'');
-      v.value = vn; v.classList.toggle('af', !!vn);
+      // Determine VIP: prev conductor if eligible, else best VIP candidate
+      const prevC = i===0 ? prevSunConductor : (sorted[i-1]?.name||'');
+      let vipName = '';
+      if (prevC && vipEligible(prevC) && !thisWeekC.has(prevC)) {
+        vipName = prevC;
+      } else {
+        // Find best eligible VIP candidate not in this week's conductors
+        const now2 = new Date();
+        const lastVip2 = {};
+        if (S.vipHistory) Object.entries(S.vipHistory).forEach(([n,d]) => lastVip2[n] = d);
+        const candidates = S.members
+          .filter(m => (!S.excluded||!S.excluded[m.name]) && !thisWeekC.has(m.name) && vipEligible(m.name) && m.name !== (sorted[i]?.name))
+          .sort((a,b) => {
+            const da = lastVip2[a.name] ? Math.floor((now2-new Date(lastVip2[a.name]+'T00:00:00'))/86400000) : Infinity;
+            const db = lastVip2[b.name] ? Math.floor((now2-new Date(lastVip2[b.name]+'T00:00:00'))/86400000) : Infinity;
+            return db-da;
+          });
+        vipName = candidates[0]?.name || '';
+      }
+      v.value = vipName; v.classList.toggle('af', !!vipName);
     }
   }
   updateRotStatus();
@@ -582,6 +756,20 @@ function saveSchedule() {
   }
   // Allow saving empty schedule (to clear a week)
   S.schedules[key] = days;
+  // Record vipHistory for past dates
+  const todayStr3 = todayISO();
+  days.forEach(d => {
+    if (d.vip && d.date) {
+      // Reconstruct full date from week key + day index
+      const dayIdx = DAYS.indexOf(d.day);
+      const dd = new Date(key+'T00:00:00'); dd.setDate(dd.getDate()+dayIdx);
+      const ds = iso(dd);
+      if (ds <= todayStr3) {
+        if (!S.vipHistory) S.vipHistory = {};
+        if (!S.vipHistory[d.vip] || ds > S.vipHistory[d.vip]) S.vipHistory[d.vip] = ds;
+      }
+    }
+  });
   S.previewIdx = Object.keys(S.schedules).sort().indexOf(key);
   save(); updateRotStatus(); toast('保存しました ✓');
   setTimeout(() => showPage('preview'), 400);
