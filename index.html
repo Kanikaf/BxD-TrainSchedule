@@ -223,7 +223,7 @@ const SKEY = 'bxd_rot_v3';
 const RANK_ORDER = {R5:0, R4:1, R3:2, R2:3, R1:4};
 
 // ── GAS Backend URL ── (GASデプロイ後にここを更新)
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyoiM0I-PVsYPdeLlFO16cuMexkYfyqfQoamDA1CjP3x_SK9Rg1UF1q5Mc8ETduMjPK/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyv3th9blcyZIRBiN2v3Z90SvgAu5MDFoB-c3qYdirU-sEFxNx_pHOtKU9eB4TzJxfP/exec';
 
 const DEFAULT_MEMBERS = [
   {name:"イツキ ヨウ",rank:"R5"},
@@ -277,6 +277,7 @@ async function syncFromGAS() {
     if (data.schedules)        S.schedules        = data.schedules;
     if (data.conductorHistory) S.conductorHistory = data.conductorHistory;
     if (data.vipHistory)       S.vipHistory       = data.vipHistory;
+    if (data.vipSkipped)      S.vipSkipped      = data.vipSkipped;
     if (data.excluded)         S.excluded         = data.excluded;
     localStorage.setItem(SKEY, JSON.stringify(S));
     showSyncStatus('✓ 同期済み');
@@ -303,6 +304,7 @@ async function saveToGAS() {
           schedules: S.schedules,
           conductorHistory: S.conductorHistory,
           vipHistory: S.vipHistory,
+          vipSkipped: S.vipSkipped,
           excluded: S.excluded
         }
       })
@@ -325,6 +327,7 @@ function loadS() {
       const d = JSON.parse(r);
       if (!d.conductorHistory) d.conductorHistory = {};
       if (!d.vipHistory) d.vipHistory = {};
+      if (!d.vipSkipped) d.vipSkipped = {};
       if (!d.excluded) d.excluded = {};
       return d;
     }
@@ -333,7 +336,7 @@ function loadS() {
     const ra=RANK_ORDER[a.rank]??9, rb=RANK_ORDER[b.rank]??9;
     return ra!==rb ? ra-rb : a.name.localeCompare(b.name,'ja');
   });
-  return { members: def, rotPos: 0, schedules: {}, previewIdx: 0, conductorHistory: {}, vipHistory: {}, excluded: {} };
+  return { members: def, rotPos: 0, schedules: {}, previewIdx: 0, conductorHistory: {}, vipHistory: {}, vipSkipped: {}, excluded: {} };
 }
 function save() { try { localStorage.setItem(SKEY, JSON.stringify(S)); } catch(e) {} saveToGAS(); }
 
@@ -612,15 +615,31 @@ function getVipCandidates(di) {
     vipEligible(m.name)
   );
 
+  // Build lastVip3 for sorting
+  const lastVip3 = {};
+  if (S.vipHistory) Object.entries(S.vipHistory).forEach(([n,d]) => lastVip3[n] = d);
+  Object.entries(S.schedules).forEach(([wk, days]) => {
+    days.forEach((d, i) => {
+      if (d.vip) {
+        const dd = new Date(wk+'T00:00:00'); dd.setDate(dd.getDate()+i);
+        const ds = iso(dd);
+        if (!lastVip3[d.vip] || ds > lastVip3[d.vip]) lastVip3[d.vip] = ds;
+      }
+    });
+  });
   // Sort by last VIP date elapsed descending (never = Infinity)
   const sorted = [...eligible].sort((a, b) => {
-    const da = lastVip[a.name] ? Math.floor((now - new Date(lastVip[a.name]+'T00:00:00'))/86400000) : Infinity;
-    const db = lastVip[b.name] ? Math.floor((now - new Date(lastVip[b.name]+'T00:00:00'))/86400000) : Infinity;
+    const da = lastVip3[a.name] ? Math.floor((now - new Date(lastVip3[a.name]+'T00:00:00'))/86400000) : Infinity;
+    const db = lastVip3[b.name] ? Math.floor((now - new Date(lastVip3[b.name]+'T00:00:00'))/86400000) : Infinity;
     return db - da;
   }).map(m => m.name);
 
-  // Put prev conductor first ONLY if eligible (not assigned within cycle)
-  if (prevConductor && vipEligible(prevConductor) && !thisWeekConductors.has(prevConductor)) {
+  // Put prev conductor first ONLY if not recently VIP
+  const now3 = new Date();
+  const prevVipRecent = prevConductor && lastVip3[prevConductor] &&
+    Math.floor((now3 - new Date(lastVip3[prevConductor]+'T00:00:00')) / 86400000) < activeCount();
+
+  if (prevConductor && !prevVipRecent && eligible.find(m => m.name === prevConductor)) {
     const rest = sorted.filter(n => n !== prevConductor);
     return [prevConductor, ...rest];
   }
@@ -638,6 +657,10 @@ function cycleVipCandidate(id, di, dir) {
   // dir === -1 means "元に戻す" → restore original auto-filled value
   if (dir === -1) {
     const orig = vipOriginalValue[id] ?? '';
+    // Clear vipSkipped flag since we're restoring original
+    if (orig && S.vipSkipped && S.vipSkipped[orig]) {
+      delete S.vipSkipped[orig];
+    }
     el.value = orig;
     el.classList.remove('changed');
     el.classList.toggle('af', !!orig);
@@ -648,6 +671,12 @@ function cycleVipCandidate(id, di, dir) {
   // Save original value on first use
   if (vipOriginalValue[id] === undefined) {
     vipOriginalValue[id] = el.value;
+  }
+  // Mark original VIP as skipped (they were the auto-assigned conductor-based VIP)
+  const origVip = vipOriginalValue[id];
+  if (origVip && origVip !== '') {
+    if (!S.vipSkipped) S.vipSkipped = {};
+    S.vipSkipped[origVip] = true;
   }
   el.dataset.vipNone = '';
 
@@ -787,13 +816,24 @@ function autoFill() {
     if (v) {
       if (i === 0 && v.value.trim()) continue; // Monday VIP already set above
       const todayConductor = sorted[i]?.name||'';
-      const prevC = i===0 ? prevSunConductor : (sorted[i-1]?.name||'');
+      // Use actual field value for prev conductor (not sorted[i-1] which may differ)
+      const prevCEl = i===0 ? null : document.getElementById('c_'+(i-1));
+      const prevC = i===0 ? prevSunConductor : (prevCEl?.value.trim()||'');
       let vipName = '';
 
-      if (prevC && vipAvail(prevC, todayConductor)) {
+      // Normal rule: prev conductor → today's VIP
+      // Exception: if prevC has vipSkipped flag, skip and use fallback
+      const prevCSkipped = prevC && S.vipSkipped && S.vipSkipped[prevC];
+      
+      if (prevC && vipAvail(prevC, todayConductor) && !prevCSkipped) {
         vipName = prevC;
       } else {
+        // Fallback: VIP history order (longest since last VIP)
         vipName = getBestVip(todayConductor);
+        // Clear vipSkipped flag for prevC since we've now skipped once
+        if (prevCSkipped && S.vipSkipped) {
+          delete S.vipSkipped[prevC];
+        }
       }
       if (vipName) assignedVips.add(vipName);
       v.value = vipName; v.classList.toggle('af', !!vipName);
