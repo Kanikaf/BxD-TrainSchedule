@@ -685,16 +685,21 @@ function autoFill() {
   const ws = document.getElementById('sched-week-start').value;
   if (!ws) { toast('開始日を選んでください'); return; }
   const lastDate = {};
+  // Seed from conductorHistory
   if (S.conductorHistory) Object.entries(S.conductorHistory).forEach(([n,d]) => lastDate[n] = d);
-  // Include ALL scheduled conductor dates (past and future) so next week avoids same people
+  // Also include vipHistory - VIP counts as recent assignment for conductor priority
+  if (S.vipHistory) Object.entries(S.vipHistory).forEach(([n,d]) => {
+    if (!lastDate[n] || d > lastDate[n]) lastDate[n] = d;
+  });
+  // Include ALL scheduled conductor AND vip dates (past and future)
   Object.entries(S.schedules).forEach(([wk, days]) => {
     days.forEach((d, i) => {
-      if (d.conductor) {
-        const dd = new Date(wk+'T00:00:00'); dd.setDate(dd.getDate()+i);
-        const ds = iso(dd);
-        if (!lastDate[d.conductor] || ds > lastDate[d.conductor])
-          lastDate[d.conductor] = ds;
-      }
+      const dd = new Date(wk+'T00:00:00'); dd.setDate(dd.getDate()+i);
+      const ds = iso(dd);
+      if (d.conductor && (!lastDate[d.conductor] || ds > lastDate[d.conductor]))
+        lastDate[d.conductor] = ds;
+      if (d.vip && (!lastDate[d.vip] || ds > lastDate[d.vip]))
+        lastDate[d.vip] = ds;
     });
   });
   const now = new Date();
