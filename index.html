@@ -549,11 +549,13 @@ function activeCount() {
   return S.members.filter(m => !S.excluded || !S.excluded[m.name]).length;
 }
 
-// Check if person is eligible for VIP (not assigned within rotation cycle)
+// Check if person is eligible for VIP
+// Condition: last VIP date is more than activeCount() days ago
+// (conductor history is NOT checked - conductor and VIP are independent cycles)
 function vipEligible(name) {
-  const last = getLastAssigned(name);
-  if (!last) return true; // never assigned = eligible
-  const days = Math.floor((new Date() - new Date(last+'T00:00:00')) / 86400000);
+  const lastVipDate = S.vipHistory && S.vipHistory[name] ? S.vipHistory[name] : '';
+  if (!lastVipDate) return true; // never done VIP = eligible
+  const days = Math.floor((new Date() - new Date(lastVipDate+'T00:00:00')) / 86400000);
   return days >= activeCount();
 }
 
