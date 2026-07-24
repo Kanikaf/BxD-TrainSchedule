@@ -684,22 +684,33 @@ function autoFill() {
   if (!S.members.length) { toast('連盟員を登録してください'); return; }
   const ws = document.getElementById('sched-week-start').value;
   if (!ws) { toast('開始日を選んでください'); return; }
+  // Conductor lastDate: conductor history only (independent from VIP)
   const lastDate = {};
-  // Seed from conductorHistory
   if (S.conductorHistory) Object.entries(S.conductorHistory).forEach(([n,d]) => lastDate[n] = d);
-  // Also include vipHistory - VIP counts as recent assignment for conductor priority
-  if (S.vipHistory) Object.entries(S.vipHistory).forEach(([n,d]) => {
-    if (!lastDate[n] || d > lastDate[n]) lastDate[n] = d;
-  });
-  // Include ALL scheduled conductor AND vip dates (past and future)
+  // Include ALL scheduled conductor dates (past and future)
   Object.entries(S.schedules).forEach(([wk, days]) => {
     days.forEach((d, i) => {
-      const dd = new Date(wk+'T00:00:00'); dd.setDate(dd.getDate()+i);
-      const ds = iso(dd);
-      if (d.conductor && (!lastDate[d.conductor] || ds > lastDate[d.conductor]))
-        lastDate[d.conductor] = ds;
-      if (d.vip && (!lastDate[d.vip] || ds > lastDate[d.vip]))
-        lastDate[d.vip] = ds;
+      if (d.conductor) {
+        const dd = new Date(wk+'T00:00:00'); dd.setDate(dd.getDate()+i);
+        const ds = iso(dd);
+        if (!lastDate[d.conductor] || ds > lastDate[d.conductor])
+          lastDate[d.conductor] = ds;
+      }
+    });
+  });
+
+  // VIP lastDate: vip history only (independent from conductor)
+  const lastVipDate = {};
+  if (S.vipHistory) Object.entries(S.vipHistory).forEach(([n,d]) => lastVipDate[n] = d);
+  // Include ALL scheduled VIP dates (past and future)
+  Object.entries(S.schedules).forEach(([wk, days]) => {
+    days.forEach((d, i) => {
+      if (d.vip) {
+        const dd = new Date(wk+'T00:00:00'); dd.setDate(dd.getDate()+i);
+        const ds = iso(dd);
+        if (!lastVipDate[d.vip] || ds > lastVipDate[d.vip])
+          lastVipDate[d.vip] = ds;
+      }
     });
   });
   const now = new Date();
@@ -733,24 +744,27 @@ function autoFill() {
   const assignedVips = new Set(); // track VIPs already used this week
 
   // VIP availability check: not excluded, not same-day conductor, not already VIP this week
-  // NOTE: being this week's conductor does NOT disqualify from VIP (conductor→next day VIP is the base rule)
-  const vipAvail = (name, todayConductor) =>
-    name &&
-    (!S.excluded || !S.excluded[name]) &&
-    !assignedVips.has(name) &&
-    name !== todayConductor &&
-    vipEligible(name);
+  // Check VIP recency using lastVipDate (independent from conductor)
+  const vipAvail = (name, todayConductor) => {
+    if (!name) return false;
+    if (S.excluded && S.excluded[name]) return false;
+    if (assignedVips.has(name)) return false;
+    if (name === todayConductor) return false;
+    // Check VIP recency: must have enough days since last VIP
+    const lastVip = lastVipDate[name];
+    if (!lastVip) return true; // never done VIP = available
+    const daysSince = Math.floor((now2 - new Date(lastVip+'T00:00:00')) / 86400000);
+    return daysSince >= activeCount();
+  };
 
   const now2 = new Date();
-  const lastVip2 = {};
-  if (S.vipHistory) Object.entries(S.vipHistory).forEach(([n,d]) => lastVip2[n] = d);
 
   const getBestVip = (todayConductor) => {
     return S.members
       .filter(m => vipAvail(m.name, todayConductor))
       .sort((a,b) => {
-        const da = lastVip2[a.name] ? Math.floor((now2-new Date(lastVip2[a.name]+'T00:00:00'))/86400000) : Infinity;
-        const db = lastVip2[b.name] ? Math.floor((now2-new Date(lastVip2[b.name]+'T00:00:00'))/86400000) : Infinity;
+        const da = lastVipDate[a.name] ? Math.floor((now2-new Date(lastVipDate[a.name]+'T00:00:00'))/86400000) : Infinity;
+        const db = lastVipDate[b.name] ? Math.floor((now2-new Date(lastVipDate[b.name]+'T00:00:00'))/86400000) : Infinity;
         return db-da;
       })[0]?.name || '';
   };
