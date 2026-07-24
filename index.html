@@ -406,7 +406,6 @@ function autoSaveCurrentWeek(callback) {
 }
 
 function buildDayRows() {
-  resetVipOriginals();
   const ws = document.getElementById('sched-week-start').value;
   if (!ws) return;
   const mon = monOf(ws);
@@ -441,6 +440,7 @@ function buildDayRows() {
     if (mondayVip && !mondayVip.value) {
       mondayVip.value = prevSunConductorBD;
       mondayVip.classList.add('af');
+      vipOriginalValue['v_0'] = prevSunConductorBD;
     }
   }
 }
@@ -682,7 +682,6 @@ function resetVipOriginals() {
 }
 
 function autoFill() {
-  resetVipOriginals();
   if (!S.members.length) { toast('連盟員を登録してください'); return; }
   const ws = document.getElementById('sched-week-start').value;
   if (!ws) { toast('開始日を選んでください'); return; }
@@ -789,6 +788,13 @@ function autoFill() {
       if (vipName) assignedVips.add(vipName);
       v.value = vipName; v.classList.toggle('af', !!vipName);
     }
+  }
+  // Save auto-filled values as originals for 元に戻す
+  for (let i = 0; i < 7; i++) {
+    const vid = 'v_'+i;
+    const vEl = document.getElementById(vid);
+    if (vEl) vipOriginalValue[vid] = vEl.value;
+    delete vipCandidateIdx[vid];
   }
   updateRotStatus();
   toast('自動入力完了 ✓ 間が空いている順に並べました');
