@@ -706,8 +706,33 @@ function autoFill() {
     });
   });
   const now = new Date();
-  // Filter out excluded members
-  const eligible = S.members.filter(m => !S.excluded || !S.excluded[m.name]);
+  // Build last conductor date from schedules (including future scheduled)
+  const lastConductorDate = {};
+  Object.entries(S.schedules).forEach(([wk, days]) => {
+    days.forEach((d, i) => {
+      if (d.conductor) {
+        const dd = new Date(wk+'T00:00:00'); dd.setDate(dd.getDate()+i);
+        const ds = iso(dd);
+        if (!lastConductorDate[d.conductor] || ds > lastConductorDate[d.conductor])
+          lastConductorDate[d.conductor] = ds;
+      }
+    });
+  });
+  // Also check conductorHistory
+  if (S.conductorHistory) Object.entries(S.conductorHistory).forEach(([n,d]) => {
+    if (!lastConductorDate[n] || d > lastConductorDate[n]) lastConductorDate[n] = d;
+  });
+
+  // Conductor eligible: not excluded, not assigned within activeCount() days
+  const cycle = activeCount();
+  const eligible = S.members.filter(m => {
+    if (S.excluded && S.excluded[m.name]) return false;
+    const last = lastConductorDate[m.name];
+    if (!last) return true;
+    const daysSince = Math.floor((now - new Date(last+'T00:00:00')) / 86400000);
+    return daysSince >= cycle;
+  });
+
   const sorted = [...eligible].sort((a, b) => {
     const da = lastDate[a.name] ? Math.floor((now - new Date(lastDate[a.name]+'T00:00:00'))/86400000) : Infinity;
     const db = lastDate[b.name] ? Math.floor((now - new Date(lastDate[b.name]+'T00:00:00'))/86400000) : Infinity;
@@ -769,7 +794,14 @@ function autoFill() {
 
   // Re-sort conductors excluding pre-set VIPs
   const sortedFiltered = [...S.members]
-    .filter(m => !preSetVips.has(m.name) && (!S.excluded || !S.excluded[m.name]))
+    .filter(m => {
+      if (S.excluded && S.excluded[m.name]) return false;
+      if (preSetVips.has(m.name)) return false;
+      const last = lastConductorDate[m.name];
+      if (!last) return true;
+      const daysSince = Math.floor((now - new Date(last+'T00:00:00')) / 86400000);
+      return daysSince >= cycle;
+    })
     .sort((a, b) => {
       const da = lastDate[a.name] ? Math.floor((new Date() - new Date(lastDate[a.name]+'T00:00:00'))/86400000) : Infinity;
       const db = lastDate[b.name] ? Math.floor((new Date() - new Date(lastDate[b.name]+'T00:00:00'))/86400000) : Infinity;
