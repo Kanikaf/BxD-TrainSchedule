@@ -597,10 +597,18 @@ function getVipCandidates(di) {
   // Priority 1: yesterday's conductor (normal rule)
   const prevConductor = di > 0 ? document.getElementById('c_'+(di-1))?.value.trim() : '';
 
-  // Eligible: not excluded, not this week's conductor, within rotation cycle
+  // Collect already-assigned VIPs in current input fields (before this day)
+  const assignedVipsInUI = new Set();
+  for (let j = 0; j < di; j++) {
+    const vv = document.getElementById('v_'+j)?.value.trim();
+    if (vv) assignedVipsInUI.add(vv);
+  }
+
+  // Eligible: not excluded, not this week's conductor, within rotation cycle, not already VIP this week
   const eligible = S.members.filter(m =>
     (!S.excluded || !S.excluded[m.name]) &&
     !thisWeekConductors.has(m.name) &&
+    !assignedVipsInUI.has(m.name) &&
     vipEligible(m.name)
   );
 
@@ -686,23 +694,30 @@ function autoFill() {
 
   // Build set of conductors assigned this week
   const thisWeekC = new Set(sorted.slice(0,7).map(m => m?.name).filter(Boolean));
+  const assignedVips = new Set(); // track VIPs already assigned this week
 
   for (let i = 0; i < 7; i++) {
     const c = document.getElementById('c_'+i); const v = document.getElementById('v_'+i);
     if (c) { c.value = sorted[i]?.name||''; c.classList.add('af'); }
     if (v) {
-      // Determine VIP: prev conductor if eligible, else best VIP candidate
       const prevC = i===0 ? prevSunConductor : (sorted[i-1]?.name||'');
       let vipName = '';
-      if (prevC && vipEligible(prevC) && !thisWeekC.has(prevC)) {
+      const todayConductor = sorted[i]?.name||'';
+
+      // Helper: is this person available for VIP today?
+      const available = (name) => name && vipEligible(name)
+        && !thisWeekC.has(name)
+        && !assignedVips.has(name)
+        && name !== todayConductor;
+
+      if (available(prevC)) {
         vipName = prevC;
       } else {
-        // Find best eligible VIP candidate not in this week's conductors
         const now2 = new Date();
         const lastVip2 = {};
         if (S.vipHistory) Object.entries(S.vipHistory).forEach(([n,d]) => lastVip2[n] = d);
         const candidates = S.members
-          .filter(m => (!S.excluded||!S.excluded[m.name]) && !thisWeekC.has(m.name) && vipEligible(m.name) && m.name !== (sorted[i]?.name))
+          .filter(m => available(m.name))
           .sort((a,b) => {
             const da = lastVip2[a.name] ? Math.floor((now2-new Date(lastVip2[a.name]+'T00:00:00'))/86400000) : Infinity;
             const db = lastVip2[b.name] ? Math.floor((now2-new Date(lastVip2[b.name]+'T00:00:00'))/86400000) : Infinity;
@@ -710,6 +725,7 @@ function autoFill() {
           });
         vipName = candidates[0]?.name || '';
       }
+      if (vipName) assignedVips.add(vipName);
       v.value = vipName; v.classList.toggle('af', !!vipName);
     }
   }
